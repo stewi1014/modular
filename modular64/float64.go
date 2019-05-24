@@ -5,6 +5,7 @@ import (
 	"math/bits"
 )
 
+// Becuase this makes porting to float32 so much easier
 const (
 	fExponentBits = 11
 	fFractionBits = 52
@@ -18,20 +19,49 @@ const (
 	fFractionMask = (1 << fFractionBits) - 1
 )
 
+// getFractionAt returns the fraction at the given exponent. Truncates bits too high or too low.
+func getFractionAt(f float64, exp uint) uint64 {
+	ffr, fexp := frexp(f)
+	switch {
+	case fexp == exp:
+		return ffr // That was easy
+
+	case fexp < exp:
+		shift := exp - fexp
+		if fexp == 0 {
+			shift-- // We're in denormalised land
+		}
+		return ffr >> shift
+
+	case fexp > exp:
+		shift := fexp - exp
+		if exp == 0 {
+			shift-- // Another denormal
+		}
+		return ffr << shift
+
+	}
+	panic("integers have gone crazy - How can a==b, a<b and a>b all be false for an integer?")
+}
+
+// frexp splits a float into it's exponent and fraction component. Sign bit is discarded.
+// The 53rd implied bit is placed in the fraction if appropriate
 func frexp(f float64) (uint64, uint) {
 	fbits := math.Float64bits(f)
-	exp := uint((fbits & fExponentMask) >> 52)
+	exp := uint((fbits & fExponentMask) >> fFractionBits)
 	if exp == 0 {
 		return fbits & fFractionMask, 0
 	}
-	return (fbits & fFractionMask) | (1 << 52), exp
+	return (fbits & fFractionMask) | (1 << fFractionBits), exp
 }
 
+// ldexp assembles a float from an exponent and fraction component. Sign is ignored.
+// Expects the 53rd implied bit to be set if appropriate.
 func ldexp(fr uint64, exp uint) float64 {
 	if exp == 0 || fr == 0 {
 		return math.Float64frombits(fr & fFractionMask)
 	}
-	shift := uint(bits.LeadingZeros64(fr) - 11)
+	shift := uint(bits.LeadingZeros64(fr) - fExponentBits)
 	if shift >= exp {
 		shift = exp - 1
 		exp = 0
@@ -39,28 +69,5 @@ func ldexp(fr uint64, exp uint) float64 {
 		exp -= uint(shift)
 	}
 	fr = fr << shift
-	return math.Float64frombits((uint64(exp) << 52) | (fr & fFractionMask))
-}
-
-// fexp returns the float's exponent
-func fexp(f float64) uint {
-	return uint((math.Float64bits(f) & fExponentMask) >> 52)
-}
-
-// n = 2**exp
-// modulus cannot be 0
-func pow2mod(exp uint, modulus uint64) uint64 {
-	if exp == 0 {
-		return 1
-	}
-	if modulus&(1<<63) > 0 {
-		// Here for debugging, this function is never called with such a large modulus
-		panic("modulus too large; calculations overflow uint64")
-	}
-	r := uint64(2)
-	for i := uint(1); i < exp; i++ {
-		r *= 2
-		r = r % modulus
-	}
-	return r
+	return math.Float64frombits((uint64(exp) << fFractionBits) | (fr & fFractionMask))
 }

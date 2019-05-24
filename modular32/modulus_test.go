@@ -1,21 +1,24 @@
-package modular64
+package modular32
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
 	"reflect"
 	"testing"
 
 	"github.com/chewxy/math32"
-	"github.com/stewi1014/things"
 )
 
-const randomTestNum = 2000
+const randomTestNum = 230000
 
 var (
-	varNumber float32 = 13
+	varNumber float32 = 234
 	varMod    float32 = 16
+	varSink   float32
+
+	varUintNumber uint = 13267489
+	varUintMod    uint = 293
+	varUintSink   uint
 )
 
 func makeDenormFloat(fr uint32) float32 {
@@ -84,10 +87,10 @@ func TestModulus_Congruent(t *testing.T) {
 			want:    math32.NaN(),
 		},
 		{
-			name:    "Denormalised edge case",
-			modulus: math32.Ldexp(1, -124),
-			arg:     math32.Ldexp(1.003, -124),
-			want:    math32.Mod(math32.Ldexp(1.003, -124), math32.Ldexp(1, -124)),
+			name:    "NaN modulo",
+			modulus: math32.NaN(),
+			arg:     0.01,
+			want:    math32.NaN(),
 		},
 	}
 	for _, tt := range tests {
@@ -95,18 +98,13 @@ func TestModulus_Congruent(t *testing.T) {
 			m := NewModulus(tt.modulus)
 			got := m.Congruent(tt.arg)
 			if got != tt.want && !(math32.IsNaN(got) && math32.IsNaN(tt.want)) {
-				fmt.Println("num", things.FormatFloat32(tt.arg))
-				fmt.Println("mod", things.FormatFloat32(tt.modulus))
-				fmt.Println("got", things.FormatFloat32(got))
-				fmt.Println("wan", things.FormatFloat32(tt.want))
-				fmt.Println("")
-				t.Errorf("Modulus.Congruent(%v) = %v, want %v", tt.arg, got, tt.want)
+				t.Errorf("Modulus{%v}.Congruent(%v) = %v, want %v", tt.modulus, tt.arg, got, tt.want)
 			}
 		})
 	}
 }
 
-func TestModulusMisc(t *testing.T) {
+func TestModulus_misc(t *testing.T) {
 	t.Run("Mod() test", func(t *testing.T) {
 		m := NewModulus(varMod)
 		got := m.Mod()
@@ -118,7 +116,7 @@ func TestModulusMisc(t *testing.T) {
 
 func randomFloat() float32 {
 	b := rand.Uint32()
-	f := ldexp(b&fFractionMask, uint(b&fExponentMask)>>fFractionBits)
+	f := ldexp(b&fFractionMask, uint(b&fExponentMask)>>52)
 	if b&fSignMask > 0 {
 		f = -f
 	}
@@ -128,7 +126,7 @@ func randomFloat() float32 {
 	return f
 }
 
-func TestModulus_Congruent_Random(t *testing.T) {
+func TestModulus_Congruent_random(t *testing.T) {
 	for i := 0; i < randomTestNum; i++ {
 		modulus := randomFloat()
 		arg := randomFloat()
@@ -140,12 +138,7 @@ func TestModulus_Congruent_Random(t *testing.T) {
 			m := NewModulus(modulus)
 			got := m.Congruent(arg)
 			if got != want && !(math32.IsNaN(got) && math32.IsNaN(want)) {
-				fmt.Println("num", arg)
-				fmt.Println("mod", modulus)
-				fmt.Println("got", got)
-				fmt.Println("want", want)
-				fmt.Println("")
-				t.Errorf("Modulus.Congruent(%v) = %v, want %v", arg, got, want)
+				t.Errorf("Modulus{%v}.Congruent(%v) = %v, want %v", modulus, arg, got, want)
 			}
 		})
 	}

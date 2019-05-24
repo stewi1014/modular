@@ -1,4 +1,4 @@
-package modular64
+package modular32
 
 import (
 	"bytes"
@@ -13,7 +13,6 @@ import (
 //
 // Special cases:
 // NewModulus(0) = panic(integer divide by zero)
-// NewModulus(±Inf) = Modulus{+Inf}
 //
 // An Infinite modulus has no effect other than to waste CPU time
 func NewModulus(modulus float32) Modulus {
@@ -36,10 +35,16 @@ type Modulus struct {
 	exp uint
 }
 
+// Mod returns the modulus
+func (m Modulus) Mod() float32 {
+	return m.mod
+}
+
 // Congruent returns n mod m
 //
 // Special cases:
-// Modulus{+Inf}.Congruent(±n) = +n
+// Modulus{Inf}.Congruent(±n) = +n
+// Modulus{NaN}.Congruent(±n) = NaN
 func (m Modulus) Congruent(n float32) float32 {
 	if math32.IsNaN(n) || math32.IsInf(n, 0) || math32.IsNaN(m.mod) {
 		return math32.NaN()
@@ -50,43 +55,45 @@ func (m Modulus) Congruent(n float32) float32 {
 
 	if n < m.mod && n > -m.mod {
 		if n < 0 {
-			return n + m.mod
+			r := n + m.mod
+			return r
 		}
 		return n
 	}
 
 	nfr, nexp := frexp(n)
 	expdiff := nexp - m.exp
-	if m.exp == 0 && nexp > 0 {
-		expdiff-- //If we're going to shift into denormalised-land, we need to note that denormals have
-	}
-
-	//Iterativly apply exponent, trying to take the lagest possible chunk every iteration
-	for {
-		shift := uint(bits.LeadingZeros32(nfr)) // Find the maximum amount we can shift
-		if shift > expdiff {                    // Don't want to shift too far
-			shift = expdiff
-		}
-		nfr = nfr << shift  // iteratively apply exponent
-		nfr = m.fd.Mod(nfr) // apply mod
-		expdiff -= shift
-		if expdiff == 0 { // we've moved as much as we need to
-			break
-		}
-	}
-
+	nfr = m.modFrExp(nfr, expdiff)
 	r := ldexp(nfr, m.exp)
 
 	if n < 0 && r != 0 {
-		r = -r + m.mod // correctly handle negatives
+		r = m.mod - r // correctly handle negatives
 	}
 
 	return r
 }
 
-// Mod returns the modulus
-func (m Modulus) Mod() float32 {
-	return m.mod
+// after doing other checks and optimisations, this is what really does the modulo calulation.
+func (m Modulus) modFrExp(nfr uint32, exp uint) uint32 {
+	if m.exp == 0 && exp > 0 {
+		exp-- //We're going to shift into denormalised-land, keep the exponent accurate.
+	}
+
+	//Iterativly apply exponent to the fraction, trying to take the lagest possible chunk every iteration
+	for {
+		shift := uint(bits.LeadingZeros32(nfr)) // Find the maximum chunk we can take
+		if shift > exp {                        // Don't want to shift too far
+			shift = exp
+		}
+		nfr = nfr << shift  // apply a chunk of exponent
+		nfr = m.fd.Mod(nfr) // apply mod
+		exp -= shift
+		if exp == 0 { // we've applied all the exponent
+			break
+		}
+	}
+
+	return nfr
 }
 
 // MarshalBinary implements binary.BinaryMarshaler

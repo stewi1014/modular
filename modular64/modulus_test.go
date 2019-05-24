@@ -1,20 +1,22 @@
 package modular64
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
 	"reflect"
 	"testing"
-
-	"github.com/stewi1014/things"
 )
 
-const randomTestNum = 2000
+const randomTestNum = 20000
 
 var (
-	varNumber float64 = 13
+	varNumber float64 = 234
 	varMod    float64 = 16
+	varSink   float64
+
+	varUintNumber uint = 13267489
+	varUintMod    uint = 293
+	varUintSink   uint
 )
 
 func makeDenormFloat(fr uint64) float64 {
@@ -89,16 +91,28 @@ func TestModulus_Congruent(t *testing.T) {
 			want:    math.Mod(math.Ldexp(1.003, -1022), math.Ldexp(1, -1022)),
 		},
 		{
-			name:    "Failed case from random (fixed)",
+			name:    "Generated case 1",
 			modulus: -1.16358406231669e-309,
 			arg:     -2.3400420480579135e+145,
 			want:    math.Mod(-2.3400420480579135e+145, 1.16358406231669e-309) + 1.16358406231669e-309,
 		},
 		{
-			name:    "Failed case from random2",
+			name:    "Generated case 2",
 			modulus: 1.0863201545657832e-307,
 			arg:     1.3303463489150531e+13,
 			want:    math.Mod(1.3303463489150531e+13, 1.0863201545657832e-307),
+		},
+		{
+			name:    "Generated case 3",
+			modulus: 2.039381663448266e-229,
+			arg:     -1.370217367318819e-267,
+			want:    math.Mod(-1.370217367318819e-267, 2.039381663448266e-229) + 2.039381663448266e-229,
+		},
+		{
+			name:    "NaN modulo",
+			modulus: math.NaN(),
+			arg:     0.01,
+			want:    math.NaN(),
 		},
 	}
 	for _, tt := range tests {
@@ -106,12 +120,7 @@ func TestModulus_Congruent(t *testing.T) {
 			m := NewModulus(tt.modulus)
 			got := m.Congruent(tt.arg)
 			if got != tt.want && !(math.IsNaN(got) && math.IsNaN(tt.want)) {
-				fmt.Println("num", things.FormatFloat64(tt.arg))
-				fmt.Println("mod", things.FormatFloat64(tt.modulus))
-				fmt.Println("got", things.FormatFloat64(got))
-				fmt.Println("wan", things.FormatFloat64(tt.want))
-				fmt.Println("")
-				t.Errorf("Modulus.Congruent(%v) = %v, want %v", tt.arg, got, tt.want)
+				t.Errorf("Modulus{%v}.Congruent(%v) = %v, want %v", tt.modulus, tt.arg, got, tt.want)
 			}
 		})
 	}
@@ -139,7 +148,7 @@ func randomFloat() float64 {
 	return f
 }
 
-func TestModulus_CongruentRandom(t *testing.T) {
+func TestModulus_Congruent_random(t *testing.T) {
 	for i := 0; i < randomTestNum; i++ {
 		modulus := randomFloat()
 		arg := randomFloat()
@@ -151,12 +160,7 @@ func TestModulus_CongruentRandom(t *testing.T) {
 			m := NewModulus(modulus)
 			got := m.Congruent(arg)
 			if got != want && !(math.IsNaN(got) && math.IsNaN(want)) {
-				fmt.Println("num", arg)
-				fmt.Println("mod", modulus)
-				fmt.Println("got", got)
-				fmt.Println("want", want)
-				fmt.Println("")
-				t.Errorf("Modulus.Congruent(%v) = %v, want %v", arg, got, want)
+				t.Errorf("Modulus{%v}.Congruent(%v) = %v, want %v", modulus, arg, got, want)
 			}
 		})
 	}
