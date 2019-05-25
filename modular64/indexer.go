@@ -15,7 +15,7 @@ var (
 
 // NewIndexer creates a new Indexer
 //
-// Index must not be larger than 2**16.
+// Index must not be larger than 2**32.
 // Modulus must be a normalised float.
 //
 // Special cases:
@@ -58,11 +58,13 @@ type Indexer struct {
 	i   int
 }
 
-// Index indexes n to the integer range 0 <= num < index
+// Index indexes n
+// If n is NaN or ±Inf, it returns the index.
+// Otherwise, it always satisfies 0 <= num < index
 //
 // Special cases:
-// Index(NaN) = 0
-// Index(±Inf) = 0
+// Index(NaN) = index
+// Index(±Inf) = index
 func (i Indexer) Index(n float64) int {
 	if math.IsNaN(n) || math.IsInf(n, 0) {
 		return i.i

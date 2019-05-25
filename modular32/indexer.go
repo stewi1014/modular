@@ -20,7 +20,7 @@ var (
 //
 // Special cases:
 // NewIndexer(m, 0) = panic(integer divide by zero)
-// NewIndexer(m, i > 2**16) = ErrIndexTooBig
+// NewIndexer(m, i > 2**16) = ErrBadIndex
 // NewIndexer(0, i) = ErrBadModulo
 // NewIndexer(±Inf, i) = ErrBadModulo
 // NewIndexer(NaN, i) = ErrBadModulo
@@ -58,8 +58,9 @@ type Indexer struct {
 	i   int
 }
 
-// Index indexes n to the integer range 0 <= num < index
+// Index indexes n
 // If n is NaN or ±Inf, it returns the index.
+// Otherwise, it always satisfies 0 <= num < index
 //
 // Special cases:
 // Index(NaN) = index
