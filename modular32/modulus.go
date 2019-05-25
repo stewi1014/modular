@@ -91,5 +91,5 @@ func (m Modulus) modFrExp(nfr uint32, exp uint) uint32 {
 		exp-- //We're in denormalised land, skip an exponent.
 	}
 
-	return uint32(m.fd.Mod(uint64(nfr) * m.powers[exp]))
+	return uint32(m.fd.Mod(uint64(nfr) * m.powers[exp])) //Hooray for direct computation
 }
