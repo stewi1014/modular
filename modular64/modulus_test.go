@@ -82,6 +82,12 @@ func TestModulus_Congruent(t *testing.T) {
 			want:    math.NaN(),
 		},
 		{
+			name:    "Infinte number and modulo test",
+			modulus: math.Inf(1),
+			arg:     math.Inf(1),
+			want:    math.Inf(1),
+		},
+		{
 			name:    "Denormalised edge case",
 			modulus: math.Ldexp(1, -1022),
 			arg:     math.Ldexp(1.003, -1022),

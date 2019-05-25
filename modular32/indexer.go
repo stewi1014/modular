@@ -66,7 +66,7 @@ type Indexer struct {
 // 		Index(NaN) = index
 // 		Index(±Inf) = index
 func (i Indexer) Index(n float32) int {
-	if math32.IsNaN(n) || math32.IsInf(n, 0) {
+	if math32.IsNaN(n) || math32.IsInf(n, 0) || i.i == 0 {
 		return i.i
 	}
 

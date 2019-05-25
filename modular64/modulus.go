@@ -46,11 +46,11 @@ func (m Modulus) Mod() float64 {
 //		Modulus.Congruent(NaN) = NaN
 //		Modulus.Congruent(±Inf) = NaN
 func (m Modulus) Congruent(n float64) float64 {
-	if math.IsNaN(n) || math.IsInf(n, 0) || math.IsNaN(m.mod) {
-		return math.NaN()
-	}
 	if math.IsInf(m.mod, 0) {
 		return math.Abs(n)
+	}
+	if math.IsNaN(n) || math.IsInf(n, 0) || math.IsNaN(m.mod) {
+		return math.NaN()
 	}
 
 	if n < m.mod && n > -m.mod {
