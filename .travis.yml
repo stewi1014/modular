@@ -1,4 +1,3 @@
-go_import_path: github.com/stewi1014/modular/modular64/
 language: go
 
 script:
