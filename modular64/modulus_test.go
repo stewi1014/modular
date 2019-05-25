@@ -1,27 +1,18 @@
-package modular64
+package modular64_test
 
 import (
+	"fmt"
 	"math"
-	"math/rand"
-	"reflect"
 	"testing"
+
+	"github.com/stewi1014/modular/modular64"
 )
 
 const randomTestNum = 20000
 
 var (
-	varNumber float64 = 234
-	varMod    float64 = 16
-	varSink   float64
-
-	varUintNumber uint = 13267489
-	varUintMod    uint = 293
-	varUintSink   uint
+	float64Sink float64
 )
-
-func makeDenormFloat(fr uint64) float64 {
-	return math.Float64frombits(fr)
-}
 
 func TestModulus_Congruent(t *testing.T) {
 	tests := []struct {
@@ -37,6 +28,12 @@ func TestModulus_Congruent(t *testing.T) {
 			want:    6,
 		},
 		{
+			name:    "No change test",
+			modulus: 435,
+			arg:     434,
+			want:    434,
+		},
+		{
 			name:    "Small test",
 			modulus: 0.1,
 			arg:     0.17,
@@ -44,9 +41,9 @@ func TestModulus_Congruent(t *testing.T) {
 		},
 		{
 			name:    "Very small test",
-			modulus: makeDenormFloat(4144),
-			arg:     makeDenormFloat(123445),
-			want:    makeDenormFloat(3269),
+			modulus: math.Float64frombits(4144),
+			arg:     math.Float64frombits(123445),
+			want:    math.Float64frombits(3269),
 		},
 		{
 			name:    "very big test with small modulus",
@@ -117,7 +114,7 @@ func TestModulus_Congruent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := NewModulus(tt.modulus)
+			m := modular64.NewModulus(tt.modulus)
 			got := m.Congruent(tt.arg)
 			if got != tt.want && !(math.IsNaN(got) && math.IsNaN(tt.want)) {
 				t.Errorf("Modulus{%v}.Congruent(%v) = %v, want %v", tt.modulus, tt.arg, got, tt.want)
@@ -126,85 +123,42 @@ func TestModulus_Congruent(t *testing.T) {
 	}
 }
 
-func TestModulus_misc(t *testing.T) {
+func TestModulus_Misc(t *testing.T) {
 	t.Run("Mod() test", func(t *testing.T) {
-		m := NewModulus(varMod)
+		m := modular64.NewModulus(15)
 		got := m.Mod()
-		if got != varMod {
-			t.Errorf("Modulus.Mod() = %v, want %v", got, varMod)
+		if got != 15 {
+			t.Errorf("Modulus.Mod() = %v, want %v", got, 15)
 		}
 	})
 }
 
-func randomFloat() float64 {
-	b := rand.Uint64()
-	f := ldexp(b&fFractionMask, uint(b&fExponentMask)>>52)
-	if b&fSignMask > 0 {
-		f = -f
-	}
-	if math.IsNaN(f) || math.IsInf(f, 0) {
-		return randomFloat()
-	}
-	return f
+var benchmarks = []float64{
+	0,
+	1,
+	20,
+	1e20,
+	1e150,
+	1e300,
 }
 
-func TestModulus_Congruent_random(t *testing.T) {
-	for i := 0; i < randomTestNum; i++ {
-		modulus := randomFloat()
-		arg := randomFloat()
-		want := math.Mod(arg, modulus)
-		if want < 0 {
-			want = want + math.Abs(modulus)
-		}
-		t.Run("Random Test", func(t *testing.T) {
-			m := NewModulus(modulus)
-			got := m.Congruent(arg)
-			if got != want && !(math.IsNaN(got) && math.IsNaN(want)) {
-				t.Errorf("Modulus{%v}.Congruent(%v) = %v, want %v", modulus, arg, got, want)
+func BenchmarkMath_Mod(b *testing.B) {
+	for _, n := range benchmarks {
+		b.Run(fmt.Sprintf("Math.Mod(%v)", n), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				float64Sink = math.Mod(n, 1)
 			}
 		})
 	}
 }
 
-func TestModulus_MarshalBinary(t *testing.T) {
-	tests := []struct {
-		name    string
-		modulus Modulus
-	}{
-		{
-			name:    "Basic test",
-			modulus: NewModulus(1),
-		},
-		{
-			name:    "Basic test",
-			modulus: NewModulus(13425),
-		},
-		{
-			name:    "Basic test",
-			modulus: NewModulus(1221313),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			data, _ := tt.modulus.MarshalBinary() // Never returns an error
-			newmod := Modulus{}
-			newmod.UnmarshalBinary(data)
-			if !reflect.DeepEqual(tt.modulus, newmod) {
-				t.Errorf("Modulus.Unmarshal() = %v, want %v", newmod, tt.modulus)
+func BenchmarkModulus(b *testing.B) {
+	for _, n := range benchmarks {
+		b.Run(fmt.Sprintf("Congruent(%v)", n), func(b *testing.B) {
+			m := modular64.NewModulus(1)
+			for i := 0; i < b.N; i++ {
+				float64Sink = m.Congruent(n)
 			}
 		})
-	}
-}
-
-func Benchmark_math_Mod(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		math.Mod(varNumber, varMod)
-	}
-}
-
-func Benchmark_Modulus_Congruent(b *testing.B) {
-	mod := NewModulus(varMod)
-	for i := 0; i < b.N; i++ {
-		mod.Congruent(varNumber)
 	}
 }

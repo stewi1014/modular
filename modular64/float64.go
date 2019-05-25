@@ -5,7 +5,6 @@ import (
 	"math/bits"
 )
 
-// Becuase this makes porting to float32 so much easier
 const (
 	fExponentBits = 11
 	fFractionBits = 52
@@ -19,29 +18,12 @@ const (
 	fFractionMask = (1 << fFractionBits) - 1
 )
 
-// getFractionAt returns the fraction at the given exponent. Truncates bits too high or too low.
-func getFractionAt(f float64, exp uint) uint64 {
-	ffr, fexp := frexp(f)
-	switch {
-	case fexp == exp:
-		return ffr // That was easy
-
-	case fexp < exp:
-		shift := exp - fexp
-		if fexp == 0 {
-			shift-- // We're in denormalised land
-		}
-		return ffr >> shift
-
-	case fexp > exp:
-		shift := fexp - exp
-		if exp == 0 {
-			shift-- // Another denormal
-		}
-		return ffr << shift
-
+// shiftSub shifts n up by up-down
+func shiftSub(up, down uint, n uint64) uint64 {
+	if up > down {
+		return n << (up - down)
 	}
-	panic("integers have gone crazy - How can a==b, a<b and a>b all be false for an integer?")
+	return n >> (down - up)
 }
 
 // frexp splits a float into it's exponent and fraction component. Sign bit is discarded.

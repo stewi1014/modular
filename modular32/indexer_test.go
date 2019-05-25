@@ -1,11 +1,15 @@
-package modular32
+package modular32_test
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/chewxy/math32"
+	"github.com/stewi1014/modular/modular32"
 )
 
 var (
-	varIndex uint = 56
+	uintSink uint
 )
 
 func TestIndexer_Index(t *testing.T) {
@@ -15,126 +19,164 @@ func TestIndexer_Index(t *testing.T) {
 		n       float32
 	}
 	type want struct {
-		n   uint
-		err error
+		n           uint
+		creationErr error
 	}
 	tests := []struct {
 		name string
 		args args
 		want want
 	}{
-		/*
-			{
-				name: "Basic test",
-				args: args{
-					modulus: 15,
-					index:   15,
-					n:       1,
-				},
-				want: want{
-					n:   1,
-					err: nil,
-				},
+		{
+			name: "Basic test",
+			args: args{
+				modulus: 15,
+				index:   15,
+				n:       1,
 			},
-			{
-				name: "Different Index",
-				args: args{
-					modulus: 15,
-					index:   10,
-					n:       1.5,
-				},
-				want: want{
-					n:   1,
-					err: nil,
-				},
+			want: want{
+				n:           1,
+				creationErr: nil,
 			},
-			{
-				name: "Negative Number",
-				args: args{
-					modulus: 200,
-					index:   100,
-					n:       -2,
-				},
-				want: want{
-					n:   99,
-					err: nil,
-				},
+		},
+		{
+			name: "Different Index and Modulo",
+			args: args{
+				modulus: 15,
+				index:   10,
+				n:       1.5,
 			},
-			{
-				name: "Large number",
-				args: args{
-					modulus: 10,
-					index:   20,
-					n:       98723456,
-				},
-				want: want{
-					n:   12,
-					err: nil,
-				},
+			want: want{
+				n:           1,
+				creationErr: nil,
 			},
-			{
-				name: "Large number",
-				args: args{
-					modulus: 10,
-					index:   20,
-					n:       98723456,
-				},
-				want: want{
-					n:   12,
-					err: nil,
-				},
+		},
+		{
+			name: "Number and Modulo same exponent",
+			args: args{
+				modulus: 120,
+				index:   100,
+				n:       115,
 			},
-			{
-				name: "Infinite Modulus",
-				args: args{
-					modulus: math32.Inf(1),
-					index:   100,
-					n:       -2,
-				},
-				want: want{
-					n:   0,
-					err: ErrBadModulo,
-				},
+			want: want{
+				n:           95,
+				creationErr: nil,
 			},
-			{
-				name: "NaN Modulus",
-				args: args{
-					modulus: math32.NaN(),
-					index:   10054,
-					n:       -2,
-				},
-				want: want{
-					n:   0,
-					err: ErrBadModulo,
-				},
+		},
+		{
+			name: "Negative Number",
+			args: args{
+				modulus: 200,
+				index:   100,
+				n:       -2,
 			},
-		*/
+			want: want{
+				n:           99,
+				creationErr: nil,
+			},
+		},
+		{
+			name: "Negative Number larger than modulus",
+			args: args{
+				modulus: 200,
+				index:   100,
+				n:       -202,
+			},
+			want: want{
+				n:           99,
+				creationErr: nil,
+			},
+		},
+		{
+			name: "Large number",
+			args: args{
+				modulus: 10,
+				index:   20,
+				n:       98723456,
+			},
+			want: want{
+				n:           12,
+				creationErr: nil,
+			},
+		},
 		{
 			name: "Edge case with number=modulo",
 			args: args{
-				modulus: 1.4510462197599293e+34,
-				index:   43847,
-				n:       -1.4510462197599290e-32,
+				modulus: 1e+20,
+				index:   43848,
+				n:       -1e-30,
 			},
 			want: want{
-				n:   34846,
-				err: nil,
+				n:           43847,
+				creationErr: nil,
+			},
+		},
+		{
+			name: "Infinite Modulus",
+			args: args{
+				modulus: math32.Inf(1),
+				index:   100,
+				n:       -2,
+			},
+			want: want{
+				n:           0,
+				creationErr: modular32.ErrBadModulo,
+			},
+		},
+		{
+			name: "NaN Modulus",
+			args: args{
+				modulus: math32.NaN(),
+				index:   10054,
+				n:       -2,
+			},
+			want: want{
+				n:           0,
+				creationErr: modular32.ErrBadModulo,
+			},
+		},
+		{
+			name: "NaN Number",
+			args: args{
+				modulus: 23,
+				index:   10054,
+				n:       math32.NaN(),
+			},
+			want: want{
+				n:           0,
+				creationErr: nil,
+			},
+		},
+		{
+			name: "Index too big",
+			args: args{
+				modulus: 1.4510462197599293,
+				index:   438404225733485,
+				n:       1.4510462197599290,
+			},
+			want: want{
+				n:           0,
+				creationErr: modular32.ErrIndexTooBig,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			i, err := NewIndexer(tt.args.modulus, tt.args.index)
-			if got := i.Index(tt.args.n); got != tt.want.n || err != tt.want.err {
-				t.Errorf("Indexer.Index(%v) = %v, want %v\nNewIndex error: \"%v\", want \"%v\"; Modulus: %v; Index: %v", tt.args.n, got, tt.want.n, err, tt.want.err, tt.args.modulus, tt.args.index)
+			i, err := modular32.NewIndexer(tt.args.modulus, tt.args.index)
+			if got := i.Index(tt.args.n); got != tt.want.n || err != tt.want.creationErr {
+				t.Errorf("Indexer.Index(%v) = %v, want %v\nNewIndex error: \"%v\", want \"%v\"; Modulus: %v; Index: %v", tt.args.n, got, tt.want.n, err, tt.want.creationErr, tt.args.modulus, tt.args.index)
 			}
 		})
 	}
 }
 
-func BenchmarkIndexer_Index(b *testing.B) {
-	ind, _ := NewIndexer(varMod, varIndex)
-	for i := 0; i < b.N; i++ {
-		varUintSink = ind.Index(varNumber)
+func BenchmarkIndexer(b *testing.B) {
+	for _, n := range benchmarks {
+		b.Run(fmt.Sprintf("Indexer.Index(%v)", n), func(b *testing.B) {
+			ind, _ := modular32.NewIndexer(1, 100)
+			for i := 0; i < b.N; i++ {
+				uintSink = ind.Index(n)
+			}
+		})
 	}
 }

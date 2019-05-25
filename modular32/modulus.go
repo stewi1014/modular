@@ -1,8 +1,6 @@
 package modular32
 
 import (
-	"bytes"
-	"encoding/binary"
 	"math/bits"
 
 	"github.com/bmkessler/fastdiv"
@@ -76,7 +74,7 @@ func (m Modulus) Congruent(n float32) float32 {
 // after doing other checks and optimisations, this is what really does the modulo calulation.
 func (m Modulus) modFrExp(nfr uint32, exp uint) uint32 {
 	if m.exp == 0 && exp > 0 {
-		exp-- //We're going to shift into denormalised-land, keep the exponent accurate.
+		exp-- //We're in denormalised land, skip an exponent.
 	}
 
 	//Iterativly apply exponent to the fraction, trying to take the lagest possible chunk every iteration
@@ -94,20 +92,4 @@ func (m Modulus) modFrExp(nfr uint32, exp uint) uint32 {
 	}
 
 	return nfr
-}
-
-// MarshalBinary implements binary.BinaryMarshaler
-func (m Modulus) MarshalBinary() ([]byte, error) {
-	buff := new(bytes.Buffer)
-	binary.Write(buff, binary.LittleEndian, m.mod)
-	return buff.Bytes(), nil
-}
-
-// UnmarshalBinary implements binary.BinaryUnmarshaler
-func (m *Modulus) UnmarshalBinary(data []byte) error {
-	buff := bytes.NewReader(data)
-	var f float32
-	binary.Read(buff, binary.LittleEndian, &f)
-	*m = NewModulus(f)
-	return nil
 }

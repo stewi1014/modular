@@ -1,12 +1,15 @@
-package modular64
+package modular64_test
 
 import (
+	"fmt"
 	"math"
 	"testing"
+
+	"github.com/stewi1014/modular/modular64"
 )
 
 var (
-	varIndex uint = 56
+	uintSink uint
 )
 
 func TestIndexer_Index(t *testing.T) {
@@ -16,8 +19,8 @@ func TestIndexer_Index(t *testing.T) {
 		n       float64
 	}
 	type want struct {
-		n   uint
-		err error
+		n           uint
+		creationErr error
 	}
 	tests := []struct {
 		name string
@@ -32,20 +35,32 @@ func TestIndexer_Index(t *testing.T) {
 				n:       1,
 			},
 			want: want{
-				n:   1,
-				err: nil,
+				n:           1,
+				creationErr: nil,
 			},
 		},
 		{
-			name: "Different Index",
+			name: "Different Index and Modulo",
 			args: args{
 				modulus: 15,
 				index:   10,
 				n:       1.5,
 			},
 			want: want{
-				n:   1,
-				err: nil,
+				n:           1,
+				creationErr: nil,
+			},
+		},
+		{
+			name: "Number and Modulo same exponent",
+			args: args{
+				modulus: 120,
+				index:   100,
+				n:       115,
+			},
+			want: want{
+				n:           95,
+				creationErr: nil,
 			},
 		},
 		{
@@ -56,8 +71,20 @@ func TestIndexer_Index(t *testing.T) {
 				n:       -2,
 			},
 			want: want{
-				n:   99,
-				err: nil,
+				n:           99,
+				creationErr: nil,
+			},
+		},
+		{
+			name: "Negative Number larger than modulus",
+			args: args{
+				modulus: 200,
+				index:   100,
+				n:       -202,
+			},
+			want: want{
+				n:           99,
+				creationErr: nil,
 			},
 		},
 		{
@@ -68,8 +95,8 @@ func TestIndexer_Index(t *testing.T) {
 				n:       98723456,
 			},
 			want: want{
-				n:   12,
-				err: nil,
+				n:           12,
+				creationErr: nil,
 			},
 		},
 		{
@@ -80,8 +107,8 @@ func TestIndexer_Index(t *testing.T) {
 				n:       -2,
 			},
 			want: want{
-				n:   0,
-				err: ErrBadModulo,
+				n:           0,
+				creationErr: modular64.ErrBadModulo,
 			},
 		},
 		{
@@ -92,8 +119,20 @@ func TestIndexer_Index(t *testing.T) {
 				n:       -2,
 			},
 			want: want{
-				n:   0,
-				err: ErrBadModulo,
+				n:           0,
+				creationErr: modular64.ErrBadModulo,
+			},
+		},
+		{
+			name: "NaN Number",
+			args: args{
+				modulus: 23,
+				index:   10054,
+				n:       math.NaN(),
+			},
+			want: want{
+				n:           0,
+				creationErr: nil,
 			},
 		},
 		{
@@ -104,8 +143,8 @@ func TestIndexer_Index(t *testing.T) {
 				n:       1.4510462197599290,
 			},
 			want: want{
-				n:   0,
-				err: ErrIndexTooBig,
+				n:           0,
+				creationErr: modular64.ErrIndexTooBig,
 			},
 		},
 		{
@@ -116,24 +155,28 @@ func TestIndexer_Index(t *testing.T) {
 				n:       -1.4510462197599290e-140,
 			},
 			want: want{
-				n:   4384041,
-				err: nil,
+				n:           4384041,
+				creationErr: nil,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			i, err := NewIndexer(tt.args.modulus, tt.args.index)
-			if got := i.Index(tt.args.n); got != tt.want.n || err != tt.want.err {
-				t.Errorf("Indexer.Index(%v) = %v, want %v\nNewIndex error: \"%v\", want \"%v\"; Modulus: %v; Index: %v", tt.args.n, got, tt.want.n, err, tt.want.err, tt.args.modulus, tt.args.index)
+			i, err := modular64.NewIndexer(tt.args.modulus, tt.args.index)
+			if got := i.Index(tt.args.n); got != tt.want.n || err != tt.want.creationErr {
+				t.Errorf("Indexer.Index(%v) = %v, want %v\nNewIndex error: \"%v\", want \"%v\"; Modulus: %v; Index: %v", tt.args.n, got, tt.want.n, err, tt.want.creationErr, tt.args.modulus, tt.args.index)
 			}
 		})
 	}
 }
 
-func BenchmarkIndexer_Index(b *testing.B) {
-	ind, _ := NewIndexer(varMod, varIndex)
-	for i := 0; i < b.N; i++ {
-		varUintSink = ind.Index(varNumber)
+func BenchmarkIndexer(b *testing.B) {
+	for _, n := range benchmarks {
+		b.Run(fmt.Sprintf("Indexer.Index(%v)", n), func(b *testing.B) {
+			ind, _ := modular64.NewIndexer(1, 100)
+			for i := 0; i < b.N; i++ {
+				uintSink = ind.Index(n)
+			}
+		})
 	}
 }

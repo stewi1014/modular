@@ -18,7 +18,7 @@ var (
 // Large indexs that approach or exceed the resolution of floats require more computation to stay accurate.
 // The same is also true for denormalised moduli. I don't see these as common use cases.
 // As such, in keeping this library fast, I've chosen 2**16 as an upper limit on the size of the index,
-// and normalised floats for moduli; >=2**-1022, not NaN and not ±Inf as limits for moduli.
+// and normalised floats for moduli; >=2**-126, not NaN and not ±Inf as limits for moduli.
 // This should be far more than needed. The primary use case of this is to index lists.
 // If you need to cast floats to an integer range larger than this, you should do something else.
 //
@@ -28,7 +28,7 @@ var (
 // NewIndexer(0, i) = ErrBadModulo
 // NewIndexer(±Inf, i) = ErrBadModulo
 // NewIndexer(NaN, i) = ErrBadModulo
-// NewIndexer(m, i) = ErrBadModulo for |m| < 2**-1022
+// NewIndexer(m, i) = ErrBadModulo for |m| < 2**-126
 func NewIndexer(modulus float32, index uint) (Indexer, error) {
 	mod := NewModulus(modulus)
 	return mod.NewIndexer(index)
@@ -44,7 +44,7 @@ func (m Modulus) NewIndexer(index uint) (Indexer, error) {
 	}
 
 	modfr, _ := frexp(m.mod)
-	r := modfr << fExponentBits
+	r := modfr << fExponentBits //r - range; is shifted fExponentBits to get a little more
 	rDivisor := r / uint32(index)
 	return Indexer{
 		Modulus: m,
@@ -72,27 +72,26 @@ func (i Indexer) Index(n float32) uint {
 		return 0
 	}
 
+	nfr, nexp := frexp(n)
 	var nr uint32
 	switch {
 	case n > i.mod:
-		nfr, nexp := frexp(n)
 		expdiff := nexp - i.exp
 		nr = i.modFrExp(nfr, expdiff) << fExponentBits
 	case n < -i.mod:
-		nfr, nexp := frexp(n)
 		expdiff := nexp - i.exp
 		nr = i.modFrExp(nfr, expdiff) << fExponentBits
 		if nr != 0 {
 			nr = i.r - nr
 		}
 	case n < 0:
-		nr = getFractionAt(n, i.exp) << fExponentBits
+		nr = shiftSub(fExponentBits, i.exp-nexp, nfr)
 		if nr == 0 {
 			return i.i - 1
 		}
 		nr = i.r - nr
 	default:
-		nr = getFractionAt(n, i.exp) << fExponentBits
+		nr = shiftSub(fExponentBits, i.exp-nexp, nfr)
 	}
 	return uint(i.fdr.Div(nr))
 }

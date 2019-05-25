@@ -1,29 +1,19 @@
-package modular32
+package modular32_test
 
 import (
+	"fmt"
 	"math"
-	"math/rand"
-	"reflect"
 	"testing"
 
 	"github.com/chewxy/math32"
+	"github.com/stewi1014/modular/modular32"
 )
 
-const randomTestNum = 230000
+const randomTestNum = 20000
 
 var (
-	varNumber float32 = 234
-	varMod    float32 = 16
-	varSink   float32
-
-	varUintNumber uint = 13267489
-	varUintMod    uint = 293
-	varUintSink   uint
+	float32Sink float32
 )
-
-func makeDenormFloat(fr uint32) float32 {
-	return math.Float32frombits(fr)
-}
 
 func TestModulus_Congruent(t *testing.T) {
 	tests := []struct {
@@ -39,6 +29,12 @@ func TestModulus_Congruent(t *testing.T) {
 			want:    6,
 		},
 		{
+			name:    "No change test",
+			modulus: 435,
+			arg:     434,
+			want:    434,
+		},
+		{
 			name:    "Small test",
 			modulus: 0.1,
 			arg:     0.17,
@@ -46,9 +42,9 @@ func TestModulus_Congruent(t *testing.T) {
 		},
 		{
 			name:    "Very small test",
-			modulus: makeDenormFloat(4144),
-			arg:     makeDenormFloat(123445),
-			want:    makeDenormFloat(3269),
+			modulus: math.Float32frombits(4144),
+			arg:     math.Float32frombits(123445),
+			want:    math.Float32frombits(3269),
 		},
 		{
 			name:    "very big test with small modulus",
@@ -87,6 +83,12 @@ func TestModulus_Congruent(t *testing.T) {
 			want:    math32.NaN(),
 		},
 		{
+			name:    "Denormalised edge case",
+			modulus: math32.Ldexp(1, -126),
+			arg:     math32.Ldexp(1.003, -126),
+			want:    math32.Mod(math32.Ldexp(1.003, -126), math32.Ldexp(1, -126)),
+		},
+		{
 			name:    "NaN modulo",
 			modulus: math32.NaN(),
 			arg:     0.01,
@@ -95,7 +97,7 @@ func TestModulus_Congruent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := NewModulus(tt.modulus)
+			m := modular32.NewModulus(tt.modulus)
 			got := m.Congruent(tt.arg)
 			if got != tt.want && !(math32.IsNaN(got) && math32.IsNaN(tt.want)) {
 				t.Errorf("Modulus{%v}.Congruent(%v) = %v, want %v", tt.modulus, tt.arg, got, tt.want)
@@ -104,85 +106,40 @@ func TestModulus_Congruent(t *testing.T) {
 	}
 }
 
-func TestModulus_misc(t *testing.T) {
+func TestModulus_Misc(t *testing.T) {
 	t.Run("Mod() test", func(t *testing.T) {
-		m := NewModulus(varMod)
+		m := modular32.NewModulus(15)
 		got := m.Mod()
-		if got != varMod {
-			t.Errorf("Modulus.Mod() = %v, want %v", got, varMod)
+		if got != 15 {
+			t.Errorf("Modulus.Mod() = %v, want %v", got, 15)
 		}
 	})
 }
 
-func randomFloat() float32 {
-	b := rand.Uint32()
-	f := ldexp(b&fFractionMask, uint(b&fExponentMask)>>52)
-	if b&fSignMask > 0 {
-		f = -f
-	}
-	if math32.IsNaN(f) || math32.IsInf(f, 0) {
-		return randomFloat()
-	}
-	return f
+var benchmarks = []float32{
+	0,
+	1,
+	20,
+	1e20,
 }
 
-func TestModulus_Congruent_random(t *testing.T) {
-	for i := 0; i < randomTestNum; i++ {
-		modulus := randomFloat()
-		arg := randomFloat()
-		want := math32.Mod(arg, modulus)
-		if want < 0 {
-			want = want + math32.Abs(modulus)
-		}
-		t.Run("Random Test", func(t *testing.T) {
-			m := NewModulus(modulus)
-			got := m.Congruent(arg)
-			if got != want && !(math32.IsNaN(got) && math32.IsNaN(want)) {
-				t.Errorf("Modulus{%v}.Congruent(%v) = %v, want %v", modulus, arg, got, want)
+func BenchmarkMath_Mod(b *testing.B) {
+	for _, n := range benchmarks {
+		b.Run(fmt.Sprintf("Math.Mod(%v)", n), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				float32Sink = math32.Mod(n, 1)
 			}
 		})
 	}
 }
 
-func TestModulus_MarshalBinary(t *testing.T) {
-	tests := []struct {
-		name    string
-		modulus Modulus
-	}{
-		{
-			name:    "Basic test",
-			modulus: NewModulus(1),
-		},
-		{
-			name:    "Basic test",
-			modulus: NewModulus(13425),
-		},
-		{
-			name:    "Basic test",
-			modulus: NewModulus(1221313),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			data, _ := tt.modulus.MarshalBinary() // Never returns an error
-			newmod := Modulus{}
-			newmod.UnmarshalBinary(data)
-			if !reflect.DeepEqual(tt.modulus, newmod) {
-				t.Errorf("Modulus.Unmarshal() = %v, want %v", newmod, tt.modulus)
+func BenchmarkModulus(b *testing.B) {
+	for _, n := range benchmarks {
+		b.Run(fmt.Sprintf("Congruent(%v)", n), func(b *testing.B) {
+			m := modular32.NewModulus(1)
+			for i := 0; i < b.N; i++ {
+				float32Sink = m.Congruent(n)
 			}
 		})
-	}
-}
-
-func Benchmark_math_Mod(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		math32.Mod(varNumber, varMod)
-	}
-}
-
-func Benchmark_Modulus_Congruent(b *testing.B) {
-	mod := NewModulus(varMod)
-	for i := 0; i < b.N; i++ {
-		mod.Congruent(varNumber)
 	}
 }

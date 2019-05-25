@@ -3,9 +3,10 @@ package modular32
 import (
 	"math"
 	"math/bits"
+
+	"github.com/chewxy/math32"
 )
 
-// Becuase this makes porting to float32 so much easier
 const (
 	fExponentBits = 8
 	fFractionBits = 23
@@ -19,35 +20,18 @@ const (
 	fFractionMask = (1 << fFractionBits) - 1
 )
 
-// getFractionAt returns the fraction at the given exponent. Truncates bits too high or too low.
-func getFractionAt(f float32, exp uint) uint32 {
-	ffr, fexp := frexp(f)
-	switch {
-	case fexp == exp:
-		return ffr // That was easy
-
-	case fexp < exp:
-		shift := exp - fexp
-		if fexp == 0 {
-			shift-- // We're in denormalised land
-		}
-		return ffr >> shift
-
-	case fexp > exp:
-		shift := fexp - exp
-		if exp == 0 {
-			shift-- // Another denormal
-		}
-		return ffr << shift
-
+// shiftSub shifts n up by up-down
+func shiftSub(up, down uint, n uint32) uint32 {
+	if up > down {
+		return n << (up - down)
 	}
-	panic("integers have gone crazy - How can a==b, a<b and a>b all be false for an integer?")
+	return n >> (down - up)
 }
 
 // frexp splits a float into it's exponent and fraction component. Sign bit is discarded.
 // The 24th implied bit is placed in the fraction if appropriate
 func frexp(f float32) (uint32, uint) {
-	fbits := math.Float32bits(f)
+	fbits := math32.Float32bits(f)
 	exp := uint((fbits & fExponentMask) >> fFractionBits)
 	if exp == 0 {
 		return fbits & fFractionMask, 0
@@ -59,7 +43,7 @@ func frexp(f float32) (uint32, uint) {
 // Expects the 24th implied bit to be set if appropriate.
 func ldexp(fr uint32, exp uint) float32 {
 	if exp == 0 || fr == 0 {
-		return math.Float32frombits(fr & fFractionMask)
+		return math32.Float32frombits(fr & fFractionMask)
 	}
 	shift := uint(bits.LeadingZeros32(fr) - fExponentBits)
 	if shift >= exp {
