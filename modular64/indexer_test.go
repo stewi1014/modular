@@ -8,18 +8,44 @@ import (
 	"github.com/stewi1014/modular/modular64"
 )
 
+func ExampleIndexer() {
+	shifts := []string{
+		"morning",
+		"day",
+		"evening",
+	}
+
+	// Errors can be ignored so long as we don't feed bad numbers
+	indexer, _ := modular64.NewIndexer(24, len(shifts))
+
+	for i := float64(0); i < 100; i += 13 {
+		shift := shifts[indexer.Index(i)]
+		fmt.Printf("It will be the %v shift in %v hours\n", shift, i)
+	}
+
+	// Output:
+	// It will be the morning shift in 0 hours
+	// It will be the day shift in 13 hours
+	// It will be the morning shift in 26 hours
+	// It will be the day shift in 39 hours
+	// It will be the morning shift in 52 hours
+	// It will be the evening shift in 65 hours
+	// It will be the morning shift in 78 hours
+	// It will be the evening shift in 91 hours
+}
+
 var (
-	uintSink uint
+	intSink int
 )
 
 func TestIndexer_Index(t *testing.T) {
 	type args struct {
 		modulus float64
-		index   uint
+		index   int
 		n       float64
 	}
 	type want struct {
-		n           uint
+		n           int
 		creationErr error
 	}
 	tests := []struct {
@@ -131,7 +157,7 @@ func TestIndexer_Index(t *testing.T) {
 				n:       math.NaN(),
 			},
 			want: want{
-				n:           0,
+				n:           10054,
 				creationErr: nil,
 			},
 		},
@@ -144,7 +170,7 @@ func TestIndexer_Index(t *testing.T) {
 			},
 			want: want{
 				n:           0,
-				creationErr: modular64.ErrIndexTooBig,
+				creationErr: modular64.ErrBadIndex,
 			},
 		},
 		{
@@ -175,7 +201,7 @@ func BenchmarkIndexer(b *testing.B) {
 		b.Run(fmt.Sprintf("Indexer.Index(%v)", n), func(b *testing.B) {
 			ind, _ := modular64.NewIndexer(1, 100)
 			for i := 0; i < b.N; i++ {
-				uintSink = ind.Index(n)
+				intSink = ind.Index(n)
 			}
 		})
 	}
