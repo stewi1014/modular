@@ -1,5 +1,11 @@
 language: go
 
+go:
+  - 1.12.x
+
+os:
+  - linux
+
 script:
   - go test ./modular64
   - go test ./modular32
