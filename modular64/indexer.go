@@ -13,24 +13,23 @@ var (
 	ErrBadIndex  = errors.New("bad index")
 )
 
-// NewIndexer creates a new Indexer
+// NewIndexer creates a new Indexer.
 //
-// Index must not be larger than 2**32.
-// Modulus must be a normalised float.
+// index must not be larger than 2**32, and modulus must be a normalised float.
 //
 // Special cases:
-// NewIndexer(m, 0) = panic(integer divide by zero)
-// NewIndexer(m, i > 2**32) = ErrBadIndex
-// NewIndexer(0, i) = ErrBadModulo
-// NewIndexer(±Inf, i) = ErrBadModulo
-// NewIndexer(NaN, i) = ErrBadModulo
-// NewIndexer(m, i) = ErrBadModulo for |m| < 2**-1022
+//		NewIndexer(m, 0) = panic(integer divide by zero)
+//		NewIndexer(m, i > 2**32) = ErrBadIndex
+//		NewIndexer(0, i) = ErrBadModulo
+//		NewIndexer(±Inf, i) = ErrBadModulo
+//		NewIndexer(NaN, i) = ErrBadModulo
+//		NewIndexer(m, i) = ErrBadModulo for |m| < 2**-1022
 func NewIndexer(modulus float64, index int) (Indexer, error) {
 	mod := NewModulus(modulus)
 	return mod.NewIndexer(index)
 }
 
-// NewIndexer creates a new indexer from the Modulus
+// NewIndexer creates a new indexer from the Modulus.
 func (m Modulus) NewIndexer(index int) (Indexer, error) {
 	if math.IsInf(m.mod, 0) || math.IsNaN(m.mod) || m.exp == 0 {
 		return Indexer{}, ErrBadModulo
@@ -50,7 +49,7 @@ func (m Modulus) NewIndexer(index int) (Indexer, error) {
 	}, nil
 }
 
-// Indexer provides a fast method for mapping a floating point modulus to a range of integers
+// Indexer provides a fast method for mapping a floating point modulus to a range of integers.
 type Indexer struct {
 	Modulus
 	fdr fastdiv.Uint64
@@ -58,13 +57,14 @@ type Indexer struct {
 	i   int
 }
 
-// Index indexes n
+// Index indexes n.
+//
 // If n is NaN or ±Inf, it returns the index.
 // Otherwise, it always satisfies 0 <= num < index
 //
 // Special cases:
-// Index(NaN) = index
-// Index(±Inf) = index
+//		Index(NaN) = index
+//		Index(±Inf) = index
 func (i Indexer) Index(n float64) int {
 	if math.IsNaN(n) || math.IsInf(n, 0) {
 		return i.i

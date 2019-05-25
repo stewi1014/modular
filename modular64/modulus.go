@@ -7,12 +7,12 @@ import (
 	"github.com/bmkessler/fastdiv"
 )
 
-// NewModulus creates a new Modulus
+// NewModulus creates a new Modulus.
+//
+// An Infinite modulus has no effect other than to waste CPU time.
 //
 // Special cases:
-// NewModulus(0) = panic(integer divide by zero)
-//
-// An Infinite modulus has no effect other than to waste CPU time
+//		NewModulus(0) = panic(integer divide by zero)
 func NewModulus(modulus float64) Modulus {
 	modfr, modexp := frexp(modulus)
 	mod := Modulus{
@@ -24,7 +24,7 @@ func NewModulus(modulus float64) Modulus {
 	return mod
 }
 
-// Modulus defines a modulus
+// Modulus defines a modulus.
 // It offers greater performance than traditional floating point modulo calculations by pre-computing the inverse of the modulus's fractional component.
 // This obviously adds overhead to the creation of a new Modulus, but quickly breaks even after a few calls to Congruent.
 type Modulus struct {
@@ -33,16 +33,16 @@ type Modulus struct {
 	exp uint
 }
 
-// Mod returns the modulus
+// Mod returns the modulus.
 func (m Modulus) Mod() float64 {
 	return m.mod
 }
 
-// Congruent returns n mod m
+// Congruent returns n mod m.
 //
 // Special cases:
-// Modulus{Inf}.Congruent(±n) = +n
-// Modulus{NaN}.Congruent(±n) = NaN
+//		Modulus{Inf}.Congruent(±n) = +n
+//		Modulus{NaN}.Congruent(±n) = NaN
 func (m Modulus) Congruent(n float64) float64 {
 	if math.IsNaN(n) || math.IsInf(n, 0) || math.IsNaN(m.mod) {
 		return math.NaN()

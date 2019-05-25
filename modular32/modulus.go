@@ -5,12 +5,11 @@ import (
 	"github.com/chewxy/math32"
 )
 
-// NewModulus creates a new Modulus
+// NewModulus creates a new Modulus.
+// An Infinite modulus has no effect other than to waste CPU time
 //
 // Special cases:
-// NewModulus(0) = panic(integer divide by zero)
-//
-// An Infinite modulus has no effect other than to waste CPU time
+// 		NewModulus(0) = panic(integer divide by zero)
 func NewModulus(modulus float32) Modulus {
 	modfr, modexp := frexp(modulus)
 
@@ -35,7 +34,7 @@ func NewModulus(modulus float32) Modulus {
 	return mod
 }
 
-// Modulus defines a modulus
+// Modulus defines a modulus.
 // It offers greater performance than traditional floating point modulo calculations by pre-computing the inverse of the modulus's fractional component,
 // and pre-computing a lookup table for different exponents in the given modulus, allowing direct computation of n mod m - no iteration or recursion is used.
 // This obviously adds overhead to the creation of a new Modulus, but quickly breaks even after a few calls to Congruent.
@@ -51,11 +50,11 @@ func (m Modulus) Mod() float32 {
 	return m.mod
 }
 
-// Congruent returns n mod m
+// Congruent returns n mod m.
 //
 // Special cases:
-// Modulus{Inf}.Congruent(±n) = +n
-// Modulus{NaN}.Congruent(±n) = NaN
+//		Modulus{Inf}.Congruent(±n) = +n
+// 		Modulus{NaN}.Congruent(±n) = NaN
 func (m Modulus) Congruent(n float32) float32 {
 	if math32.IsNaN(n) || math32.IsInf(n, 0) || math32.IsNaN(m.mod) {
 		return math32.NaN()
