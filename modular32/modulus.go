@@ -55,6 +55,8 @@ func (m Modulus) Mod() float32 {
 // Special cases:
 //		Modulus{Inf}.Congruent(±n) = +n
 // 		Modulus{NaN}.Congruent(±n) = NaN
+//		Modulus.Congruent(NaN) = NaN
+//		Modulus.Congruent(±Inf) = NaN
 func (m Modulus) Congruent(n float32) float32 {
 	if math32.IsNaN(n) || math32.IsInf(n, 0) || math32.IsNaN(m.mod) {
 		return math32.NaN()
