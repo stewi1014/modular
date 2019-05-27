@@ -3,8 +3,6 @@ package modular64
 import (
 	"math"
 	"math/bits"
-
-	"github.com/bmkessler/fastdiv"
 )
 
 // NewModulus creates a new Modulus.
@@ -15,10 +13,23 @@ import (
 //		NewModulus(0) = panic(integer divide by zero)
 func NewModulus(modulus float64) Modulus {
 	modfr, modexp := frexp(modulus)
+
+	powers := make([]uint64, fMaxExp-modexp)
+	r := uint64(1)
+	if len(powers) > 0 {
+		powers[0] = 1
+	}
+	for i := 1; i < len(powers); i++ {
+		r = r << 1
+		r = r % modfr
+		powers[i] = uint64(r)
+	}
+
 	mod := Modulus{
-		fd:  fastdiv.NewUint64(modfr),
-		mod: math.Abs(modulus),
-		exp: modexp,
+		modfr:  modfr,
+		powers: powers,
+		mod:    math.Abs(modulus),
+		exp:    modexp,
 	}
 
 	return mod
@@ -28,9 +39,10 @@ func NewModulus(modulus float64) Modulus {
 // It offers greater performance than traditional floating point modulo calculations by pre-computing the inverse of the modulus's fractional component.
 // This obviously adds overhead to the creation of a new Modulus, but quickly breaks even after a few calls to Congruent.
 type Modulus struct {
-	fd  fastdiv.Uint64
-	mod float64
-	exp uint
+	modfr  uint64
+	powers []uint64
+	mod    float64
+	exp    uint
 }
 
 // Mod returns the modulus.
@@ -79,19 +91,8 @@ func (m Modulus) modFrExp(nfr uint64, exp uint) uint64 {
 		exp-- //We're in denormalised land, skip an exponent.
 	}
 
-	//Iterativly apply exponent to the fraction, trying to take the lagest possible chunk every iteration
-	for {
-		shift := uint(bits.LeadingZeros64(nfr)) // Find the maximum chunk we can take
-		if shift > exp {                        // Don't want to shift too far
-			shift = exp
-		}
-		nfr = nfr << shift  // apply a chunk of exponent
-		nfr = m.fd.Mod(nfr) // apply mod
-		exp -= shift
-		if exp == 0 { // we've applied all the exponent
-			break
-		}
-	}
+	hi, lo := bits.Mul64(nfr, m.powers[exp])
 
-	return nfr
+	_, r := bits.Div64(hi, lo, m.modfr)
+	return r
 }
