@@ -152,7 +152,7 @@ func BenchmarkMath_Mod(b *testing.B) {
 	for _, n := range benchmarks {
 		b.Run(fmt.Sprintf("Math.Mod(%v)", n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				float64Sink = math.Mod(n, 1)
+				float64Sink = math.Mod(n, 1e-20)
 			}
 		})
 	}
@@ -161,7 +161,7 @@ func BenchmarkMath_Mod(b *testing.B) {
 func BenchmarkModulus(b *testing.B) {
 	for _, n := range benchmarks {
 		b.Run(fmt.Sprintf("Congruent(%v)", n), func(b *testing.B) {
-			m := modular64.NewModulus(1)
+			m := modular64.NewModulus(1e-20)
 			for i := 0; i < b.N; i++ {
 				float64Sink = m.Congruent(n)
 			}
