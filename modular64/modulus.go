@@ -3,6 +3,8 @@ package modular64
 import (
 	"math"
 	"math/bits"
+
+	"github.com/bmkessler/fastdiv"
 )
 
 // NewModulus creates a new Modulus.
@@ -13,19 +15,27 @@ import (
 //		NewModulus(0) = panic(integer divide by zero)
 func NewModulus(modulus float64) Modulus {
 	modfr, modexp := frexp(modulus)
+	fd := fastdiv.NewUint64(modfr)
 
-	powers := make([]uint64, fMaxExp-modexp)
+	const minPowerLen = 65
+	powerlen := fMaxExp - modexp
+	if powerlen < minPowerLen {
+		powerlen = minPowerLen
+	}
+
+	powers := make([]uint64, powerlen)
 	r := uint64(1)
 	if len(powers) > 0 {
 		powers[0] = 1
 	}
 	for i := 1; i < len(powers); i++ {
 		r = r << 1
-		r = r % modfr
+		r = fd.Mod(r)
 		powers[i] = uint64(r)
 	}
 
 	mod := Modulus{
+		fd:     fd,
 		modfr:  modfr,
 		powers: powers,
 		mod:    math.Abs(modulus),
@@ -39,6 +49,7 @@ func NewModulus(modulus float64) Modulus {
 // It offers greater performance than traditional floating point modulo calculations by pre-computing the inverse of the modulus's fractional component.
 // This obviously adds overhead to the creation of a new Modulus, but quickly breaks even after a few calls to Congruent.
 type Modulus struct {
+	fd     fastdiv.Uint64
 	modfr  uint64
 	powers []uint64
 	mod    float64
@@ -79,7 +90,7 @@ func (m Modulus) Congruent(n float64) float64 {
 	r := ldexp(nfr, m.exp)
 
 	if n < 0 && r != 0 {
-		r = m.mod - r // correctly handle negatives
+		r = m.mod - r // correctly handle negatives0o9oooooo0ooooo
 	}
 
 	return r
@@ -91,8 +102,30 @@ func (m Modulus) modFrExp(nfr uint64, exp uint) uint64 {
 		exp-- //We're in denormalised land, skip an exponent.
 	}
 
-	hi, lo := bits.Mul64(nfr, m.powers[exp])
+	return m.modMul(m.fd.Mod(nfr), m.powers[exp])
+}
 
-	_, r := bits.Div64(hi, lo, m.modfr)
-	return r
+// modified from math.bits
+func (m Modulus) modMul(a, b uint64) uint64 {
+	hi, lo := bits.Mul64(a, b)
+
+	if hi == 0 {
+		return m.fd.Mod(lo)
+	}
+
+	hic := hi
+	shift := uint(64)
+	for shift > 0 {
+		chunk := uint(bits.LeadingZeros64(hi))
+		if chunk > shift {
+			chunk = shift
+		}
+		hic = hic << chunk
+		hic = m.fd.Mod(hic)
+		shift -= chunk
+	}
+
+	//hic = congruent(hi * 2**64)
+
+	return m.fd.Mod(m.fd.Mod(lo) + m.fd.Mod(hic))
 }
