@@ -129,6 +129,110 @@ func TestModulus_Congruent(t *testing.T) {
 	}
 }
 
+func TestModulus_Dist(t *testing.T) {
+	type args struct {
+		n1 float64
+		n2 float64
+	}
+	tests := []struct {
+		name    string
+		modulus float64
+		args    args
+		want    float64
+	}{
+		{
+			name:    "Basic test",
+			modulus: 100,
+			args: args{
+				n1: 10,
+				n2: 20,
+			},
+			want: 10,
+		},
+		{
+			name:    "Forwards over 0",
+			modulus: 100,
+			args: args{
+				n1: 90,
+				n2: 20,
+			},
+			want: 30,
+		},
+		{
+			name:    "Backwards over 0",
+			modulus: 100,
+			args: args{
+				n1: 10,
+				n2: 90,
+			},
+			want: -20,
+		},
+		{
+			name:    "Backwards",
+			modulus: 100,
+			args: args{
+				n1: 40,
+				n2: 30,
+			},
+			want: -10,
+		},
+		{
+			name:    "NaN args",
+			modulus: 100,
+			args: args{
+				n1: math.NaN(),
+				n2: 30,
+			},
+			want: math.NaN(),
+		},
+		{
+			name:    "NaN args",
+			modulus: 100,
+			args: args{
+				n1: 20,
+				n2: math.NaN(),
+			},
+			want: math.NaN(),
+		},
+		{
+			name:    "NaN modulus",
+			modulus: math.NaN(),
+			args: args{
+				n1: 20,
+				n2: 30,
+			},
+			want: math.NaN(),
+		},
+		{
+			name:    "Inf modulus",
+			modulus: math.Inf(1),
+			args: args{
+				n1: 20,
+				n2: 30,
+			},
+			want: 10,
+		},
+		{
+			name:    "Inf arg",
+			modulus: 100,
+			args: args{
+				n1: math.Inf(1),
+				n2: 30,
+			},
+			want: math.NaN(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := modular64.NewModulus(tt.modulus)
+			got := m.Dist(tt.args.n1, tt.args.n2)
+			if got != tt.want && !(math.IsNaN(got) && math.IsNaN(tt.want)) {
+				t.Errorf("Modulus.Dist(%v, %v) = %v, want %v (mod %v)", tt.args.n1, tt.args.n2, got, tt.want, tt.modulus)
+			}
+		})
+	}
+}
+
 func TestModulus_Misc(t *testing.T) {
 	t.Run("Mod() test", func(t *testing.T) {
 		m := modular64.NewModulus(15)

@@ -20,6 +20,7 @@ func NewModulus(modulus float32) Modulus {
 	if len(powers) > 0 {
 		powers[0] = 1
 	}
+
 	for i := 1; i < len(powers); i++ {
 		r = r << 1
 		r = r % modfr
@@ -50,6 +51,23 @@ type Modulus struct {
 // Mod returns the modulus
 func (m Modulus) Mod() float32 {
 	return m.mod
+}
+
+// Dist returns the distance and direction of n1 to n2.
+func (m Modulus) Dist(n1, n2 float32) float32 {
+	nm1, nm2 := m.Congruent(n1), m.Congruent(n2)
+
+	dist := nm2 - nm1
+	halfmod := m.mod / 2
+	switch {
+	case dist < -halfmod:
+		return m.mod + dist
+	case dist > halfmod:
+		return dist - m.mod
+
+	default:
+		return dist
+	}
 }
 
 // Congruent returns n mod m.
