@@ -98,7 +98,7 @@ func (m Modulus) Congruent(n float64) float64 {
 		r = m.mod - r
 	}
 
-	return ldexp(rfr, m.exp)
+	return r
 }
 
 // modExp returns n * 2**exp (mod m)
