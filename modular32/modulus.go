@@ -1,6 +1,8 @@
 package modular32
 
 import (
+	"math/bits"
+
 	"github.com/bmkessler/fastdiv"
 	"github.com/chewxy/math32"
 )
@@ -75,7 +77,11 @@ func (m Modulus) Congruent(n float32) float32 {
 
 	nfr, nexp := frexp(n)
 	expdiff := nexp - m.exp
-	nfr = m.modFrExp(nfr, expdiff)
+	if m.exp == 0 && expdiff > 0 {
+		expdiff-- //We're in denormalised land, skip an exponent.
+	}
+
+	nfr = m.modExp(nfr, expdiff)
 
 	r := ldexp(nfr, m.exp)
 
@@ -86,11 +92,14 @@ func (m Modulus) Congruent(n float32) float32 {
 	return r
 }
 
-// after doing other checks and optimisations, this is what really does the modulo calulation.
-func (m Modulus) modFrExp(nfr uint32, exp uint) uint32 {
-	if m.exp == 0 && exp > 0 {
-		exp-- //We're in denormalised land, skip an exponent.
-	}
+// modExp returns a * 2**exp (mod m)
+func (m Modulus) modExp(a uint32, exp uint) uint32 {
+	switch {
+	case exp <= uint(bits.LeadingZeros32(a))+32:
+		return uint32(m.fd.Mod(uint64(a) << exp))
 
-	return uint32(m.fd.Mod(uint64(nfr) * m.powers[exp])) //Hooray for direct computation
+	default:
+		//Hooray for direct computation
+		return uint32(m.fd.Mod(uint64(a) * m.powers[exp]))
+	}
 }

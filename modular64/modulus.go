@@ -35,10 +35,10 @@ func NewModulus(modulus float64) Modulus {
 	}
 
 	mod := Modulus{
-		fd:     fd,
-		modfr:  modfr,
+		fd:     fastdiv.NewUint64(modfr),
 		powers: powers,
 		mod:    math.Abs(modulus),
+		fr:     modfr,
 		exp:    modexp,
 	}
 
@@ -50,9 +50,9 @@ func NewModulus(modulus float64) Modulus {
 // This obviously adds overhead to the creation of a new Modulus, but quickly breaks even after a few calls to Congruent.
 type Modulus struct {
 	fd     fastdiv.Uint64
-	modfr  uint64
 	powers []uint64
 	mod    float64
+	fr     uint64
 	exp    uint
 }
 
@@ -86,46 +86,31 @@ func (m Modulus) Congruent(n float64) float64 {
 
 	nfr, nexp := frexp(n)
 	expdiff := nexp - m.exp
-	nfr = m.modFrExp(nfr, expdiff)
-	r := ldexp(nfr, m.exp)
+	if m.exp == 0 && nexp != 0 {
+		expdiff-- //We're in denormalised land, skip an exponent.
+	}
+
+	rfr := m.modExp(nfr, expdiff)
+
+	r := ldexp(rfr, m.exp)
 
 	if n < 0 && r != 0 {
-		r = m.mod - r // correctly handle negatives0o9oooooo0ooooo
+		r = m.mod - r
 	}
 
-	return r
+	return ldexp(rfr, m.exp)
 }
 
-// after doing other checks and optimisations, this is what really does the modulo calulation.
-func (m Modulus) modFrExp(nfr uint64, exp uint) uint64 {
-	if m.exp == 0 && exp > 0 {
-		exp-- //We're in denormalised land, skip an exponent.
+// modExp returns n * 2**exp (mod m)
+func (m Modulus) modExp(n uint64, exp uint) uint64 {
+
+	switch { // Switch fastest computation method
+	case exp <= uint(bits.LeadingZeros64(n)):
+		return m.fd.Mod(n << exp)
+
+	default:
+		hi, lo := bits.Mul64(n, m.powers[exp])
+		_, q := bits.Div64(hi, lo, m.fr)
+		return q
 	}
-
-	return m.modMul(m.fd.Mod(nfr), m.powers[exp])
-}
-
-// modified from math.bits
-func (m Modulus) modMul(a, b uint64) uint64 {
-	hi, lo := bits.Mul64(a, b)
-
-	if hi == 0 {
-		return m.fd.Mod(lo)
-	}
-
-	hic := hi
-	shift := uint(64)
-	for shift > 0 {
-		chunk := uint(bits.LeadingZeros64(hi))
-		if chunk > shift {
-			chunk = shift
-		}
-		hic = hic << chunk
-		hic = m.fd.Mod(hic)
-		shift -= chunk
-	}
-
-	//hic = congruent(hi * 2**64)
-
-	return m.fd.Mod(m.fd.Mod(lo) + m.fd.Mod(hic))
 }

@@ -53,7 +53,3 @@ func ldexp(fr uint64, exp uint) float64 {
 	fr = fr << shift
 	return math.Float64frombits((uint64(exp) << fFractionBits) | (fr & fFractionMask))
 }
-
-func split(n uint64) (uint64, uint64) {
-	return n >> 32, n & (1<<32 - 1)
-}
