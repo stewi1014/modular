@@ -289,6 +289,7 @@ func TestModulus_Misc(t *testing.T) {
 	})
 }
 
+var benchmarkModulo = float32(1e-20)
 var benchmarks = []float32{
 	0,
 	1,
@@ -300,7 +301,7 @@ func BenchmarkMath_Mod(b *testing.B) {
 	for _, n := range benchmarks {
 		b.Run(fmt.Sprintf("Math.Mod(%v)", n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				float32Sink = math32.Mod(n, 1e-20)
+				float32Sink = math32.Mod(n, benchmarkModulo)
 			}
 		})
 	}
@@ -309,7 +310,7 @@ func BenchmarkMath_Mod(b *testing.B) {
 func BenchmarkModulus(b *testing.B) {
 	for _, n := range benchmarks {
 		b.Run(fmt.Sprintf("Congruent(%v)", n), func(b *testing.B) {
-			m := modular32.NewModulus(1e-20)
+			m := modular32.NewModulus(benchmarkModulo)
 			for i := 0; i < b.N; i++ {
 				float32Sink = m.Congruent(n)
 			}

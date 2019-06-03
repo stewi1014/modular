@@ -199,7 +199,7 @@ func TestIndexer_Index(t *testing.T) {
 func BenchmarkIndexer(b *testing.B) {
 	for _, n := range benchmarks {
 		b.Run(fmt.Sprintf("Indexer.Index(%v)", n), func(b *testing.B) {
-			ind, _ := modular64.NewIndexer(1, 100)
+			ind, _ := modular64.NewIndexer(benchmarkModulo, 100)
 			for i := 0; i < b.N; i++ {
 				intSink = ind.Index(n)
 			}
