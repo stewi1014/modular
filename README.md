@@ -9,29 +9,32 @@ Float32
 [![GoDoc](https://godoc.org/github.com/stewi1014/modular/modular32?status.svg)](https://godoc.org/github.com/stewi1014/modular/modular32)
 
 
-Modular tries to leverage pre-computation as much as possible for calculating modulo and indexing floats, leveraging [fastdiv] and pre-computed lookup tables. I can't test it on all hardware, but in principle should perform better than traditional modulo functions on all but the strangest of hardware.
+Modular tries to leverage pre-computation as much as possible to allow direct computation in Congruent() and Index(), leveraging [fastdiv] and pre-computed lookup tables. I can't test it on all hardware, but in principle should perform better than traditional modulo functions on all but the strangest of hardware.
 
-For example, on my machine with a modulo of 1e-20;
+For example, on my machine with a modulo of 1e-25;
 
 **float64**
 
 | Number | Math.Mod | Modulus.Congruent | Indexer.Index |
 | ------ | ------ | ------ | ------ |
-| 0 | 14.2 ns/op | 7.68 ns/op | 11.2 ns/op |
-| 20 | 638 ns/op | 57.0 ns/op | 15.9 ns/op |
-| 1e300 | 8153 ns/op | 590 ns/op | 144 ns/op |
+| 0 | 12.1 ns/op | 5.70 ns/op | 16.4 ns/op |
+| 2.5e-25 | 25.8 ns/op | 21.2 ns/op | 19.5 ns/op |
+| 1 | 569 ns/op | 56.1 ns/op | 49.4 ns/op |
+| 1e300 | 9797 ns/op | 56.7 ns/op | 50.2 ns/op |
 
 
 **float32**
 
 | Number | Math.Mod | Modulus.Congruent | Indexer.Index |
 | ------ | ------ | ------ | ------ |
-| 0 | 13.8 ns/op | 8.78 ns/op | 11.3 ns/op |
-| 20 | 481 ns/op | 17.9 ns/op | 13.6 ns/op |
-| 1e20 | 1000 ns/op | 17.8 ns/op | 13.8 ns/op |
+| 0 | 12.4 ns/op | 5.09 ns/op | 12.9 ns/op |
+| 2.5e-25 | 29.6 ns/op | 20.1 ns/op | 15.8 ns/op |
+| 1 | 766 ns/op | 20.5 ns/op | 14.4 ns/op |
+| 1e25 | 1240 ns/op | 22.2 ns/op | 16.5 ns/op |
 
 ***
 
-Modulus.Congruent is called Congruent as it is as accurate to euclidian division as possible, and finds the number within the range 0 <= n < modulus that is representative of the congruency class. While many implementations of the modulo function approximate this, many truncate, floor or otherwise don't perform division true to euclidian mathematics and hence often return negative numbers.
+I've use the name 'Congruent' as it's a more explicit definition of the function, and helps avoid confusion with other functions. It is the same as a typical 'modulo' function, but follows euclidian division; that is, it finds the number satisfying '0 <= n < modulus' that is representative of the given number's congruency class, hence the name Congruent.
+
 
 [fastdiv]: <https://github.com/bmkessler/fastdiv>

@@ -301,13 +301,11 @@ func TestModulus_Misc(t *testing.T) {
 	})
 }
 
-var benchmarkModulo = 1e-20
+var benchmarkModulo = float64(1e-25)
 var benchmarks = []float64{
 	0,
+	2.5e-25,
 	1,
-	20,
-	1e20,
-	1e150,
 	1e300,
 }
 

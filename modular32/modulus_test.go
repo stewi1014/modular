@@ -289,12 +289,12 @@ func TestModulus_Misc(t *testing.T) {
 	})
 }
 
-var benchmarkModulo = float32(1e-20)
+var benchmarkModulo = float32(1e-25)
 var benchmarks = []float32{
 	0,
+	2.5e-25,
 	1,
-	20,
-	1e20,
+	1e25,
 }
 
 func BenchmarkMath_Mod(b *testing.B) {
