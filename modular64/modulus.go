@@ -63,19 +63,16 @@ func (m Modulus) Mod() float64 {
 
 // Dist returns the distance and direction of n1 to n2.
 func (m Modulus) Dist(n1, n2 float64) float64 {
-	nm1, nm2 := m.Congruent(n1), m.Congruent(n2)
-
-	dist := nm2 - nm1
-	halfmod := m.mod / 2
-	switch {
-	case dist < -halfmod:
-		return m.mod + dist
-	case dist > halfmod:
-		return dist - m.mod
-
-	default:
-		return dist
+	d := m.Congruent(n2 - n1)
+	if d > m.mod/2 {
+		return d - m.mod
 	}
+	return d
+}
+
+// GetCongruent returns the closest number to n1 that is congruent to n2.
+func (m Modulus) GetCongruent(n1, n2 float64) float64 {
+	return n1 - m.Dist(n2, n1)
 }
 
 // Congruent returns n mod m.
@@ -86,19 +83,20 @@ func (m Modulus) Dist(n1, n2 float64) float64 {
 //		Modulus.Congruent(NaN) = NaN
 //		Modulus.Congruent(±Inf) = NaN
 func (m Modulus) Congruent(n float64) float64 {
-	if math.IsInf(m.mod, 0) {
-		return math.Abs(n)
-	}
-	if math.IsNaN(n) || math.IsInf(n, 0) || math.IsNaN(m.mod) {
-		return math.NaN()
-	}
-
 	if n < m.mod && n > -m.mod {
 		if n < 0 {
 			r := n + m.mod
 			return r
 		}
 		return n
+	}
+
+	if math.IsInf(m.mod, 0) {
+		return math.Abs(n)
+	}
+
+	if math.IsNaN(n) || math.IsInf(n, 0) || math.IsNaN(m.mod) {
+		return math.NaN()
 	}
 
 	nfr, nexp := frexp(n)
@@ -120,7 +118,6 @@ func (m Modulus) Congruent(n float64) float64 {
 
 // modExp returns n * 2**exp (mod m)
 func (m Modulus) modExp(n uint64, exp uint) uint64 {
-
 	switch { // Switch fastest computation method
 	case exp <= uint(bits.LeadingZeros64(n)):
 		return m.fd.Mod(n << exp)

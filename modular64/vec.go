@@ -1,7 +1,7 @@
-package modular32
+package modular64
 
 import (
-	mgl "github.com/go-gl/mathgl/mgl32"
+	mgl "github.com/go-gl/mathgl/mgl64"
 )
 
 // NewVec2Modulus creates a new 2d Vector Modulus

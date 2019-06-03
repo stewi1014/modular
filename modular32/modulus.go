@@ -55,42 +55,39 @@ func (m Modulus) Mod() float32 {
 
 // Dist returns the distance and direction of n1 to n2.
 func (m Modulus) Dist(n1, n2 float32) float32 {
-	nm1, nm2 := m.Congruent(n1), m.Congruent(n2)
-
-	dist := nm2 - nm1
-	halfmod := m.mod / 2
-	switch {
-	case dist < -halfmod:
-		return m.mod + dist
-	case dist > halfmod:
-		return dist - m.mod
-
-	default:
-		return dist
+	d := m.Congruent(n2 - n1)
+	if d > m.mod/2 {
+		return d - m.mod
 	}
+	return d
+}
+
+// GetCongruent returns the closest number to n1 that is congruent to n2.
+func (m Modulus) GetCongruent(n1, n2 float32) float32 {
+	return n1 - m.Dist(n2, n1)
 }
 
 // Congruent returns n mod m.
 //
 // Special cases:
-//		Modulus{Inf}.Congruent(±n) = +n
+//		Modulus{Inf}.Congruent(+n) = n
+//		Modulus{Inf}.Congruent(-n) = +Inf
 // 		Modulus{NaN}.Congruent(±n) = NaN
 //		Modulus.Congruent(NaN) = NaN
 //		Modulus.Congruent(±Inf) = NaN
 func (m Modulus) Congruent(n float32) float32 {
-	if math32.IsInf(m.mod, 0) {
-		return math32.Abs(n)
-	}
-	if math32.IsNaN(n) || math32.IsInf(n, 0) || math32.IsNaN(m.mod) {
-		return math32.NaN()
-	}
-
 	if n < m.mod && n > -m.mod {
 		if n < 0 {
 			r := n + m.mod
 			return r
 		}
 		return n
+	}
+	if math32.IsInf(m.mod, 0) {
+		return math32.Abs(n)
+	}
+	if math32.IsNaN(n) || math32.IsInf(n, 0) || math32.IsNaN(m.mod) {
+		return math32.NaN()
 	}
 
 	nfr, nexp := frexp(n)

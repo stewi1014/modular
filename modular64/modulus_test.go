@@ -233,6 +233,64 @@ func TestModulus_Dist(t *testing.T) {
 	}
 }
 
+func TestModulus_GetCongruent(t *testing.T) {
+	type args struct {
+		n1 float64
+		n2 float64
+	}
+	tests := []struct {
+		name    string
+		modulus float64
+		args    args
+		want    float64
+	}{
+		{
+			name:    "Backwards",
+			modulus: 100,
+			args: args{
+				n1: 230,
+				n2: 20,
+			},
+			want: 220,
+		},
+		{
+			name:    "Forward",
+			modulus: 100,
+			args: args{
+				n1: 210,
+				n2: 20,
+			},
+			want: 220,
+		},
+		{
+			name:    "Negative",
+			modulus: 100,
+			args: args{
+				n1: -350,
+				n2: 20,
+			},
+			want: -380,
+		},
+		{
+			name:    "Over 0",
+			modulus: 100,
+			args: args{
+				n1: -310,
+				n2: 20,
+			},
+			want: -280,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := modular64.NewModulus(tt.modulus)
+			if got := m.GetCongruent(tt.args.n1, tt.args.n2); got != tt.want {
+				t.Errorf("Modulus.GetCongruent(%v, %v) = %v, want %v (mod %v)", tt.args.n1, tt.args.n2, got, tt.want, tt.modulus)
+			}
+		})
+	}
+}
+
 func TestModulus_Misc(t *testing.T) {
 	t.Run("Mod() test", func(t *testing.T) {
 		m := modular64.NewModulus(15)
