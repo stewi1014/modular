@@ -1,6 +1,8 @@
 package modular32
 
 import (
+	"math/bits"
+
 	"github.com/bmkessler/fastdiv"
 	"github.com/chewxy/math32"
 )
@@ -18,6 +20,7 @@ func NewModulus(modulus float32) Modulus {
 	if len(powers) > 0 {
 		powers[0] = 1
 	}
+
 	for i := 1; i < len(powers); i++ {
 		r = r << 1
 		r = r % modfr
@@ -50,21 +53,29 @@ func (m Modulus) Mod() float32 {
 	return m.mod
 }
 
+// Dist returns the distance and direction of n1 to n2.
+func (m Modulus) Dist(n1, n2 float32) float32 {
+	d := m.Congruent(n2 - n1)
+	if d > m.mod/2 {
+		return d - m.mod
+	}
+	return d
+}
+
+// GetCongruent returns the closest number to n1 that is congruent to n2.
+func (m Modulus) GetCongruent(n1, n2 float32) float32 {
+	return n1 - m.Dist(n2, n1)
+}
+
 // Congruent returns n mod m.
 //
 // Special cases:
-//		Modulus{Inf}.Congruent(±n) = +n
+//		Modulus{Inf}.Congruent(+n) = n
+//		Modulus{Inf}.Congruent(-n) = +Inf
 // 		Modulus{NaN}.Congruent(±n) = NaN
 //		Modulus.Congruent(NaN) = NaN
 //		Modulus.Congruent(±Inf) = NaN
 func (m Modulus) Congruent(n float32) float32 {
-	if math32.IsInf(m.mod, 0) {
-		return math32.Abs(n)
-	}
-	if math32.IsNaN(n) || math32.IsInf(n, 0) || math32.IsNaN(m.mod) {
-		return math32.NaN()
-	}
-
 	if n < m.mod && n > -m.mod {
 		if n < 0 {
 			r := n + m.mod
@@ -72,10 +83,20 @@ func (m Modulus) Congruent(n float32) float32 {
 		}
 		return n
 	}
+	if math32.IsInf(m.mod, 0) {
+		return math32.Abs(n)
+	}
+	if math32.IsNaN(n) || math32.IsInf(n, 0) || math32.IsNaN(m.mod) {
+		return math32.NaN()
+	}
 
 	nfr, nexp := frexp(n)
 	expdiff := nexp - m.exp
-	nfr = m.modFrExp(nfr, expdiff)
+	if m.exp == 0 && expdiff > 0 {
+		expdiff-- //We're in denormalised land, skip an exponent.
+	}
+
+	nfr = m.modExp(nfr, expdiff)
 
 	r := ldexp(nfr, m.exp)
 
@@ -86,11 +107,14 @@ func (m Modulus) Congruent(n float32) float32 {
 	return r
 }
 
-// after doing other checks and optimisations, this is what really does the modulo calulation.
-func (m Modulus) modFrExp(nfr uint32, exp uint) uint32 {
-	if m.exp == 0 && exp > 0 {
-		exp-- //We're in denormalised land, skip an exponent.
-	}
+// modExp returns a * 2**exp (mod m)
+func (m Modulus) modExp(a uint32, exp uint) uint32 {
+	switch {
+	case exp <= uint(bits.LeadingZeros32(a))+32:
+		return uint32(m.fd.Mod(uint64(a) << exp))
 
-	return uint32(m.fd.Mod(uint64(nfr) * m.powers[exp])) //Hooray for direct computation
+	default:
+		//Hooray for direct computation
+		return uint32(m.fd.Mod(uint64(a) * m.powers[exp]))
+	}
 }

@@ -75,10 +75,10 @@ func (i Indexer) Index(n float64) int {
 	switch {
 	case n > i.mod:
 		expdiff := nexp - i.exp
-		nr = i.modFrExp(nfr, expdiff) << fExponentBits
+		nr = i.modExp(nfr, expdiff) << fExponentBits
 	case n < -i.mod:
 		expdiff := nexp - i.exp
-		nr = i.modFrExp(nfr, expdiff) << fExponentBits
+		nr = i.modExp(nfr, expdiff) << fExponentBits
 		if nr != 0 {
 			nr = i.r - nr
 		}

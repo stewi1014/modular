@@ -2,7 +2,6 @@ package modular32_test
 
 import (
 	"fmt"
-	"math"
 	"testing"
 
 	"github.com/chewxy/math32"
@@ -42,9 +41,9 @@ func TestModulus_Congruent(t *testing.T) {
 		},
 		{
 			name:    "Very small test",
-			modulus: math.Float32frombits(4144),
-			arg:     math.Float32frombits(123445),
-			want:    math.Float32frombits(3269),
+			modulus: math32.Float32frombits(4144),
+			arg:     math32.Float32frombits(123445),
+			want:    math32.Float32frombits(3269),
 		},
 		{
 			name:    "very big test with small modulus",
@@ -95,6 +94,12 @@ func TestModulus_Congruent(t *testing.T) {
 			want:    math32.Mod(math32.Ldexp(1.003, -126), math32.Ldexp(1, -126)),
 		},
 		{
+			name:    "Denormalised edge case2",
+			modulus: math32.Ldexp(1, -127),
+			arg:     math32.Ldexp(1.003, -126),
+			want:    math32.Mod(math32.Ldexp(1.003, -126), math32.Ldexp(1, -127)),
+		},
+		{
 			name:    "NaN modulo",
 			modulus: math32.NaN(),
 			arg:     0.01,
@@ -107,6 +112,168 @@ func TestModulus_Congruent(t *testing.T) {
 			got := m.Congruent(tt.arg)
 			if got != tt.want && !(math32.IsNaN(got) && math32.IsNaN(tt.want)) {
 				t.Errorf("Modulus{%v}.Congruent(%v) = %v, want %v", tt.modulus, tt.arg, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestModulus_Dist(t *testing.T) {
+	type args struct {
+		n1 float32
+		n2 float32
+	}
+	tests := []struct {
+		name    string
+		modulus float32
+		args    args
+		want    float32
+	}{
+		{
+			name:    "Basic test",
+			modulus: 100,
+			args: args{
+				n1: 10,
+				n2: 20,
+			},
+			want: 10,
+		},
+		{
+			name:    "Forwards over 0",
+			modulus: 100,
+			args: args{
+				n1: 90,
+				n2: 20,
+			},
+			want: 30,
+		},
+		{
+			name:    "Backwards over 0",
+			modulus: 100,
+			args: args{
+				n1: 10,
+				n2: 90,
+			},
+			want: -20,
+		},
+		{
+			name:    "Backwards",
+			modulus: 100,
+			args: args{
+				n1: 40,
+				n2: 30,
+			},
+			want: -10,
+		},
+		{
+			name:    "NaN args",
+			modulus: 100,
+			args: args{
+				n1: math32.NaN(),
+				n2: 30,
+			},
+			want: math32.NaN(),
+		},
+		{
+			name:    "NaN args",
+			modulus: 100,
+			args: args{
+				n1: 20,
+				n2: math32.NaN(),
+			},
+			want: math32.NaN(),
+		},
+		{
+			name:    "NaN modulus",
+			modulus: math32.NaN(),
+			args: args{
+				n1: 20,
+				n2: 30,
+			},
+			want: math32.NaN(),
+		},
+		{
+			name:    "Inf modulus",
+			modulus: math32.Inf(1),
+			args: args{
+				n1: 20,
+				n2: 30,
+			},
+			want: 10,
+		},
+		{
+			name:    "Inf arg",
+			modulus: 100,
+			args: args{
+				n1: math32.Inf(1),
+				n2: 30,
+			},
+			want: math32.NaN(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := modular32.NewModulus(tt.modulus)
+			got := m.Dist(tt.args.n1, tt.args.n2)
+			if got != tt.want && !(math32.IsNaN(got) && math32.IsNaN(tt.want)) {
+				t.Errorf("Modulus.Dist(%v, %v) = %v, want %v (mod %v)", tt.args.n1, tt.args.n2, got, tt.want, tt.modulus)
+			}
+		})
+	}
+}
+
+func TestModulus_GetCongruent(t *testing.T) {
+	type args struct {
+		n1 float32
+		n2 float32
+	}
+	tests := []struct {
+		name    string
+		modulus float32
+		args    args
+		want    float32
+	}{
+		{
+			name:    "Backwards",
+			modulus: 100,
+			args: args{
+				n1: 230,
+				n2: 20,
+			},
+			want: 220,
+		},
+		{
+			name:    "Forward",
+			modulus: 100,
+			args: args{
+				n1: 210,
+				n2: 20,
+			},
+			want: 220,
+		},
+		{
+			name:    "Negative",
+			modulus: 100,
+			args: args{
+				n1: -350,
+				n2: 20,
+			},
+			want: -380,
+		},
+		{
+			name:    "Over 0",
+			modulus: 100,
+			args: args{
+				n1: -310,
+				n2: 20,
+			},
+			want: -280,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := modular32.NewModulus(tt.modulus)
+			if got := m.GetCongruent(tt.args.n1, tt.args.n2); got != tt.want {
+				t.Errorf("Modulus.GetCongruent(%v, %v) = %v, want %v (mod %v)", tt.args.n1, tt.args.n2, got, tt.want, tt.modulus)
 			}
 		})
 	}

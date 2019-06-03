@@ -3,6 +3,8 @@ package modular64
 import (
 	"math"
 	"math/bits"
+
+	"github.com/bmkessler/fastdiv"
 )
 
 // NewModulus creates a new Modulus.
@@ -13,22 +15,30 @@ import (
 //		NewModulus(0) = panic(integer divide by zero)
 func NewModulus(modulus float64) Modulus {
 	modfr, modexp := frexp(modulus)
+	fd := fastdiv.NewUint64(modfr)
 
-	powers := make([]uint64, fMaxExp-modexp)
+	const minPowerLen = 65
+	powerlen := fMaxExp - modexp
+	if powerlen < minPowerLen {
+		powerlen = minPowerLen
+	}
+
+	powers := make([]uint64, powerlen)
 	r := uint64(1)
 	if len(powers) > 0 {
 		powers[0] = 1
 	}
 	for i := 1; i < len(powers); i++ {
 		r = r << 1
-		r = r % modfr
+		r = fd.Mod(r)
 		powers[i] = uint64(r)
 	}
 
 	mod := Modulus{
-		modfr:  modfr,
+		fd:     fastdiv.NewUint64(modfr),
 		powers: powers,
 		mod:    math.Abs(modulus),
+		fr:     modfr,
 		exp:    modexp,
 	}
 
@@ -39,15 +49,30 @@ func NewModulus(modulus float64) Modulus {
 // It offers greater performance than traditional floating point modulo calculations by pre-computing the inverse of the modulus's fractional component.
 // This obviously adds overhead to the creation of a new Modulus, but quickly breaks even after a few calls to Congruent.
 type Modulus struct {
-	modfr  uint64
+	fd     fastdiv.Uint64
 	powers []uint64
 	mod    float64
+	fr     uint64
 	exp    uint
 }
 
 // Mod returns the modulus.
 func (m Modulus) Mod() float64 {
 	return m.mod
+}
+
+// Dist returns the distance and direction of n1 to n2.
+func (m Modulus) Dist(n1, n2 float64) float64 {
+	d := m.Congruent(n2 - n1)
+	if d > m.mod/2 {
+		return d - m.mod
+	}
+	return d
+}
+
+// GetCongruent returns the closest number to n1 that is congruent to n2.
+func (m Modulus) GetCongruent(n1, n2 float64) float64 {
+	return n1 - m.Dist(n2, n1)
 }
 
 // Congruent returns n mod m.
@@ -58,13 +83,6 @@ func (m Modulus) Mod() float64 {
 //		Modulus.Congruent(NaN) = NaN
 //		Modulus.Congruent(±Inf) = NaN
 func (m Modulus) Congruent(n float64) float64 {
-	if math.IsInf(m.mod, 0) {
-		return math.Abs(n)
-	}
-	if math.IsNaN(n) || math.IsInf(n, 0) || math.IsNaN(m.mod) {
-		return math.NaN()
-	}
-
 	if n < m.mod && n > -m.mod {
 		if n < 0 {
 			r := n + m.mod
@@ -73,26 +91,40 @@ func (m Modulus) Congruent(n float64) float64 {
 		return n
 	}
 
+	if math.IsInf(m.mod, 0) {
+		return math.Abs(n)
+	}
+
+	if math.IsNaN(n) || math.IsInf(n, 0) || math.IsNaN(m.mod) {
+		return math.NaN()
+	}
+
 	nfr, nexp := frexp(n)
 	expdiff := nexp - m.exp
-	nfr = m.modFrExp(nfr, expdiff)
-	r := ldexp(nfr, m.exp)
+	if m.exp == 0 && nexp != 0 {
+		expdiff-- //We're in denormalised land, skip an exponent.
+	}
+
+	rfr := m.modExp(nfr, expdiff)
+
+	r := ldexp(rfr, m.exp)
 
 	if n < 0 && r != 0 {
-		r = m.mod - r // correctly handle negatives
+		r = m.mod - r
 	}
 
 	return r
 }
 
-// after doing other checks and optimisations, this is what really does the modulo calulation.
-func (m Modulus) modFrExp(nfr uint64, exp uint) uint64 {
-	if m.exp == 0 && exp > 0 {
-		exp-- //We're in denormalised land, skip an exponent.
+// modExp returns n * 2**exp (mod m)
+func (m Modulus) modExp(n uint64, exp uint) uint64 {
+	switch { // Switch fastest computation method
+	case exp <= uint(bits.LeadingZeros64(n)):
+		return m.fd.Mod(n << exp)
+
+	default:
+		hi, lo := bits.Mul64(n, m.powers[exp])
+		_, q := bits.Div64(hi, lo, m.fr)
+		return q
 	}
-
-	hi, lo := bits.Mul64(nfr, m.powers[exp])
-
-	_, r := bits.Div64(hi, lo, m.modfr)
-	return r
 }
