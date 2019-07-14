@@ -34,7 +34,7 @@ For example, on my machine with a modulo of 1e-25;
 
 ***
 
-I've use the name 'Congruent' as it's a more explicit definition of the function, and helps avoid confusion with other functions. It is the same as a typical 'modulo' function, but follows euclidian division; that is, it finds the number satisfying '0 <= n < modulus' that is representative of the given number's congruency class, hence the name Congruent.
+I've use the name 'Congruent' as it's a more explicit definition of the function, and helps avoid confusion with other functions. It is the same as a euclidian 'modulo' function; that is, it finds the number satisfying '0 <= n < modulus' that is representative of the given number's congruency class, hence the name Congruent.
 
 
 [fastdiv]: <https://github.com/bmkessler/fastdiv>
