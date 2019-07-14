@@ -9,7 +9,7 @@ Float32
 [![GoDoc](https://godoc.org/github.com/stewi1014/modular/modular32?status.svg)](https://godoc.org/github.com/stewi1014/modular/modular32)
 
 
-Modular tries to leverage pre-computation as much as possible to allow direct computation in Congruent() and Index(), leveraging [fastdiv] and pre-computed lookup tables. I can't test it on all hardware, but in principle should perform better than traditional modulo functions on all but the strangest of hardware.
+Modular tries to leverage pre-computation as much as possible to allow direct computation in Congruent() and Index(), using [fastdiv] and pre-computed lookup tables. I can't test it on all hardware, but in principle should perform better than traditional modulo functions on all but the strangest of hardware.
 
 For example, on my machine with a modulo of 1e-25;
 
