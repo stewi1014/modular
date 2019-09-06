@@ -68,11 +68,11 @@ func (m Modulus) GetCongruent(n1, n2 float32) float32 {
 // Congruent returns n mod m.
 //
 // Special cases:
-//		Modulus{±Inf}.Congruent(+n) = n
-//		Modulus{±Inf}.Congruent(-n) = +Inf
-// 		Modulus{NaN}.Congruent(±n) = NaN
-//		Modulus{*}.Congruent(NaN) = NaN
-//		Modulus{*}.Congruent(±Inf) = NaN
+//		Modulus{NaN}.Congruent(n) = NaN
+// 		Modulus{±Inf}.Congruent(n>=0) = n
+//		Modulus{±Inf}.Congruent(n<0) = +Inf
+//		Modulus{m}.Congruent(±Inf) = NaN
+//		Modulus{m}.Congruent(NaN) = NaN
 func (m Modulus) Congruent(n float32) float32 {
 	if m.mod == 0 || m.mod != m.mod { // 0 or NaN modulus
 		return math.NaN()
