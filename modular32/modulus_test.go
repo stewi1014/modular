@@ -63,29 +63,40 @@ func TestModulus_Congruent(t *testing.T) {
 			arg:     -3,
 			want:    2,
 		},
+		//		Modulus{NaN}.Congruent(n) = NaN
+		{
+			name:    "NaN modulus",
+			modulus: math.NaN(),
+			arg:     0,
+			want:    math.NaN(),
+		},
+		// 		Modulus{±Inf}.Congruent(n>=0) = n
+		{
+			name:    "Inf modulus, positive number",
+			modulus: math.Inf(1),
+			arg:     0,
+			want:    0,
+		},
+		//		Modulus{±Inf}.Congruent(n<0) = +Inf
+		{
+			name:    "Inf modulus, negative number",
+			modulus: math.Inf(1),
+			arg:     -1,
+			want:    math.Inf(1),
+		},
+		//		Modulus{m}.Congruent(±Inf) = NaN
+		{
+			name:    "Inf number",
+			modulus: 1,
+			arg:     math.Inf(1),
+			want:    math.NaN(),
+		},
+		//		Modulus{m}.Congruent(NaN) = NaN
 		{
 			name:    "NaN number",
-			modulus: 92786534,
+			modulus: 1,
 			arg:     math.NaN(),
 			want:    math.NaN(),
-		},
-		{
-			name:    "Infinte modulo test",
-			modulus: math.Inf(-1),
-			arg:     0.01,
-			want:    0.01,
-		},
-		{
-			name:    "Infinte number test",
-			modulus: 2,
-			arg:     math.Inf(1),
-			want:    math.NaN(),
-		},
-		{
-			name:    "Infinte number and modulo test",
-			modulus: math.Inf(1),
-			arg:     math.Inf(1),
-			want:    math.Inf(1),
 		},
 		{
 			name:    "Denormalised edge case",
@@ -98,12 +109,6 @@ func TestModulus_Congruent(t *testing.T) {
 			modulus: math.Ldexp(1, -127),
 			arg:     math.Ldexp(1.003, -126),
 			want:    math.Mod(math.Ldexp(1.003, -126), math.Ldexp(1, -127)),
-		},
-		{
-			name:    "NaN modulo",
-			modulus: math.NaN(),
-			arg:     0.01,
-			want:    math.NaN(),
 		},
 	}
 	for _, tt := range tests {

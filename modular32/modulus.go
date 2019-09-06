@@ -68,32 +68,29 @@ func (m Modulus) GetCongruent(n1, n2 float32) float32 {
 // Congruent returns n mod m.
 //
 // Special cases:
-//		Modulus{Inf}.Congruent(+n) = n
-//		Modulus{Inf}.Congruent(-n) = +Inf
+//		Modulus{±Inf}.Congruent(+n) = n
+//		Modulus{±Inf}.Congruent(-n) = +Inf
 // 		Modulus{NaN}.Congruent(±n) = NaN
-//		Modulus.Congruent(NaN) = NaN
-//		Modulus.Congruent(±Inf) = NaN
+//		Modulus{*}.Congruent(NaN) = NaN
+//		Modulus{*}.Congruent(±Inf) = NaN
 func (m Modulus) Congruent(n float32) float32 {
-	if n < m.mod && n > -m.mod {
-		if n < 0 {
-			r := n + m.mod
-			return r
-		}
-		return n
-	}
-
-	if math.IsInf(m.mod, 0) {
-		if n >= 0 {
-			return n
-		}
-		return math.Inf(1)
-	}
-
-	if math.IsNaN(n) || math.IsInf(n, 0) || math.IsNaN(m.mod) {
+	if m.mod == 0 || m.mod != m.mod { // 0 or NaN modulus
 		return math.NaN()
 	}
 
 	nfr, nexp := frexp(n)
+
+	if n < m.mod && n > -m.mod {
+		if n < 0 {
+			return n + m.mod
+		}
+		return n
+	}
+
+	if nexp == fMaxExp {
+		return math.NaN()
+	}
+
 	expdiff := nexp - m.exp
 	if m.exp == 0 && expdiff > 0 {
 		expdiff-- //We're in denormalised land, skip an exponent.

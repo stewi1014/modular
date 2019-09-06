@@ -17,20 +17,20 @@ For example, on my machine with a modulo of 1e-25;
 
 | Number | Math.Mod | Modulus.Congruent | Indexer.Index |
 | ------ | ------ | ------ | ------ |
-| 0 | 12.1 ns/op | 5.70 ns/op | 16.4 ns/op |
-| 2.5e-25 | 25.8 ns/op | 21.2 ns/op | 19.5 ns/op |
-| 1 | 569 ns/op | 56.1 ns/op | 49.4 ns/op |
-| 1e300 | 9797 ns/op | 56.7 ns/op | 50.2 ns/op |
+| 0 | 14.1 ns/op | 6.07 ns/op | 12.4 ns/op |
+| 2.5e-25 | 29.2 ns/op | 14.4 ns/op | 15.7 ns/op |
+| 1 | 467 ns/op | 37.5 ns/op | 38.1 ns/op |
+| 1e300 | 8063 ns/op | 36.3 ns/op | 39.4 ns/op |
 
 
 **float32**
 
 | Number | Math.Mod | Modulus.Congruent | Indexer.Index |
 | ------ | ------ | ------ | ------ |
-| 0 | 12.4 ns/op | 5.09 ns/op | 12.9 ns/op |
-| 2.5e-25 | 29.6 ns/op | 20.1 ns/op | 15.8 ns/op |
-| 1 | 766 ns/op | 20.5 ns/op | 14.4 ns/op |
-| 1e25 | 1240 ns/op | 22.2 ns/op | 16.5 ns/op |
+| 0 | 15.6 ns/op | 5.49 ns/op | 11.3 ns/op |
+| 2.5e-25 | 33.5 ns/op | 12.1 ns/op | 11.3 ns/op |
+| 1 | 766 ns/op | 12.0 ns/op | 10.9 ns/op |
+| 1e25 | 1259 ns/op | 12.0 ns/op | 11.0 ns/op |
 
 ***
 
