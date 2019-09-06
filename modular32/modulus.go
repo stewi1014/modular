@@ -2,7 +2,7 @@ package modular32
 
 import (
 	"github.com/bmkessler/fastdiv"
-	"github.com/chewxy/math32"
+	math "github.com/chewxy/math32"
 )
 
 // NewModulus creates a new Modulus.
@@ -28,7 +28,7 @@ func NewModulus(modulus float32) Modulus {
 	mod := Modulus{
 		fd:     fastdiv.NewUint64(uint64(modfr)),
 		powers: powers,
-		mod:    math32.Abs(modulus),
+		mod:    math.Abs(modulus),
 		exp:    modexp,
 	}
 
@@ -81,11 +81,16 @@ func (m Modulus) Congruent(n float32) float32 {
 		}
 		return n
 	}
-	if math32.IsInf(m.mod, 0) {
-		return math32.Abs(n)
+
+	if math.IsInf(m.mod, 0) {
+		if n >= 0 {
+			return n
+		}
+		return math.Inf(1)
 	}
-	if math32.IsNaN(n) || math32.IsInf(n, 0) || math32.IsNaN(m.mod) {
-		return math32.NaN()
+
+	if math.IsNaN(n) || math.IsInf(n, 0) || math.IsNaN(m.mod) {
+		return math.NaN()
 	}
 
 	nfr, nexp := frexp(n)

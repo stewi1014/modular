@@ -92,7 +92,10 @@ func (m Modulus) Congruent(n float64) float64 {
 	}
 
 	if math.IsInf(m.mod, 0) {
-		return math.Abs(n)
+		if n >= 0 {
+			return n
+		}
+		return math.Inf(1)
 	}
 
 	if math.IsNaN(n) || math.IsInf(n, 0) || math.IsNaN(m.mod) {

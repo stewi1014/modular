@@ -1,10 +1,9 @@
 package modular32
 
 import (
-	"math"
 	"math/bits"
 
-	"github.com/chewxy/math32"
+	math "github.com/chewxy/math32"
 )
 
 const (
@@ -31,7 +30,7 @@ func shiftSub(up, down uint, n uint32) uint32 {
 // frexp splits a float into it's exponent and fraction component. Sign bit is discarded.
 // The 24th implied bit is placed in the fraction if appropriate
 func frexp(f float32) (uint32, uint) {
-	fbits := math32.Float32bits(f)
+	fbits := math.Float32bits(f)
 	exp := uint((fbits & fExponentMask) >> fFractionBits)
 	if exp == 0 {
 		return fbits & fFractionMask, 0
@@ -43,7 +42,7 @@ func frexp(f float32) (uint32, uint) {
 // Expects the 24th implied bit to be set if appropriate.
 func ldexp(fr uint32, exp uint) float32 {
 	if exp == 0 || fr == 0 {
-		return math32.Float32frombits(fr & fFractionMask)
+		return math.Float32frombits(fr & fFractionMask)
 	}
 	shift := uint(bits.LeadingZeros32(fr) - fExponentBits)
 	if shift >= exp {

@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/bmkessler/fastdiv"
-	"github.com/chewxy/math32"
+	math "github.com/chewxy/math32"
 )
 
 // Error types
@@ -31,7 +31,7 @@ func NewIndexer(modulus float32, index int) (Indexer, error) {
 
 // NewIndexer creates a new indexer from the Modulus.
 func (m Modulus) NewIndexer(index int) (Indexer, error) {
-	if math32.IsInf(m.mod, 0) || math32.IsNaN(m.mod) || m.exp == 0 {
+	if math.IsInf(m.mod, 0) || math.IsNaN(m.mod) || m.exp == 0 {
 		return Indexer{}, ErrBadModulo
 	}
 	if index > (1<<16) || index < 1 {
@@ -66,7 +66,7 @@ type Indexer struct {
 // 		Index(NaN) = index
 // 		Index(±Inf) = index
 func (i Indexer) Index(n float32) int {
-	if math32.IsNaN(n) || math32.IsInf(n, 0) || i.i == 0 {
+	if math.IsNaN(n) || math.IsInf(n, 0) || i.i == 0 {
 		return i.i
 	}
 

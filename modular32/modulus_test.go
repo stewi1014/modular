@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/chewxy/math32"
+	math "github.com/chewxy/math32"
 	"github.com/stewi1014/modular/modular32"
 )
 
@@ -41,15 +41,15 @@ func TestModulus_Congruent(t *testing.T) {
 		},
 		{
 			name:    "Very small test",
-			modulus: math32.Float32frombits(4144),
-			arg:     math32.Float32frombits(123445),
-			want:    math32.Float32frombits(3269),
+			modulus: math.Float32frombits(4144),
+			arg:     math.Float32frombits(123445),
+			want:    math.Float32frombits(3269),
 		},
 		{
 			name:    "very big test with small modulus",
 			modulus: 10,
 			arg:     456897613245865,
-			want:    math32.Mod(456897613245865, 10),
+			want:    math.Mod(456897613245865, 10),
 		},
 		{
 			name:    "Negative number",
@@ -66,51 +66,51 @@ func TestModulus_Congruent(t *testing.T) {
 		{
 			name:    "NaN number",
 			modulus: 92786534,
-			arg:     math32.NaN(),
-			want:    math32.NaN(),
+			arg:     math.NaN(),
+			want:    math.NaN(),
 		},
 		{
 			name:    "Infinte modulo test",
-			modulus: math32.Inf(-1),
+			modulus: math.Inf(-1),
 			arg:     0.01,
 			want:    0.01,
 		},
 		{
 			name:    "Infinte number test",
 			modulus: 2,
-			arg:     math32.Inf(1),
-			want:    math32.NaN(),
+			arg:     math.Inf(1),
+			want:    math.NaN(),
 		},
 		{
 			name:    "Infinte number and modulo test",
-			modulus: math32.Inf(1),
-			arg:     math32.Inf(1),
-			want:    math32.Inf(1),
+			modulus: math.Inf(1),
+			arg:     math.Inf(1),
+			want:    math.Inf(1),
 		},
 		{
 			name:    "Denormalised edge case",
-			modulus: math32.Ldexp(1, -126),
-			arg:     math32.Ldexp(1.003, -126),
-			want:    math32.Mod(math32.Ldexp(1.003, -126), math32.Ldexp(1, -126)),
+			modulus: math.Ldexp(1, -126),
+			arg:     math.Ldexp(1.003, -126),
+			want:    math.Mod(math.Ldexp(1.003, -126), math.Ldexp(1, -126)),
 		},
 		{
 			name:    "Denormalised edge case2",
-			modulus: math32.Ldexp(1, -127),
-			arg:     math32.Ldexp(1.003, -126),
-			want:    math32.Mod(math32.Ldexp(1.003, -126), math32.Ldexp(1, -127)),
+			modulus: math.Ldexp(1, -127),
+			arg:     math.Ldexp(1.003, -126),
+			want:    math.Mod(math.Ldexp(1.003, -126), math.Ldexp(1, -127)),
 		},
 		{
 			name:    "NaN modulo",
-			modulus: math32.NaN(),
+			modulus: math.NaN(),
 			arg:     0.01,
-			want:    math32.NaN(),
+			want:    math.NaN(),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := modular32.NewModulus(tt.modulus)
 			got := m.Congruent(tt.arg)
-			if got != tt.want && !(math32.IsNaN(got) && math32.IsNaN(tt.want)) {
+			if got != tt.want && !(math.IsNaN(got) && math.IsNaN(tt.want)) {
 				t.Errorf("Modulus{%v}.Congruent(%v) = %v, want %v", tt.modulus, tt.arg, got, tt.want)
 			}
 		})
@@ -168,32 +168,32 @@ func TestModulus_Dist(t *testing.T) {
 			name:    "NaN args",
 			modulus: 100,
 			args: args{
-				n1: math32.NaN(),
+				n1: math.NaN(),
 				n2: 30,
 			},
-			want: math32.NaN(),
+			want: math.NaN(),
 		},
 		{
 			name:    "NaN args",
 			modulus: 100,
 			args: args{
 				n1: 20,
-				n2: math32.NaN(),
+				n2: math.NaN(),
 			},
-			want: math32.NaN(),
+			want: math.NaN(),
 		},
 		{
 			name:    "NaN modulus",
-			modulus: math32.NaN(),
+			modulus: math.NaN(),
 			args: args{
 				n1: 20,
 				n2: 30,
 			},
-			want: math32.NaN(),
+			want: math.NaN(),
 		},
 		{
 			name:    "Inf modulus",
-			modulus: math32.Inf(1),
+			modulus: math.Inf(1),
 			args: args{
 				n1: 20,
 				n2: 30,
@@ -204,17 +204,17 @@ func TestModulus_Dist(t *testing.T) {
 			name:    "Inf arg",
 			modulus: 100,
 			args: args{
-				n1: math32.Inf(1),
+				n1: math.Inf(1),
 				n2: 30,
 			},
-			want: math32.NaN(),
+			want: math.NaN(),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := modular32.NewModulus(tt.modulus)
 			got := m.Dist(tt.args.n1, tt.args.n2)
-			if got != tt.want && !(math32.IsNaN(got) && math32.IsNaN(tt.want)) {
+			if got != tt.want && !(math.IsNaN(got) && math.IsNaN(tt.want)) {
 				t.Errorf("Modulus.Dist(%v, %v) = %v, want %v (mod %v)", tt.args.n1, tt.args.n2, got, tt.want, tt.modulus)
 			}
 		})
@@ -301,7 +301,7 @@ func BenchmarkMath_Mod(b *testing.B) {
 	for _, n := range benchmarks {
 		b.Run(fmt.Sprintf("Math.Mod(%v)", n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				float32Sink = math32.Mod(n, benchmarkModulo)
+				float32Sink = math.Mod(n, benchmarkModulo)
 			}
 		})
 	}
