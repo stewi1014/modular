@@ -8,8 +8,6 @@ import (
 	"github.com/stewi1014/modular/modular32"
 )
 
-const randomTestNum = 20000
-
 var (
 	float32Sink float32
 )
@@ -41,9 +39,9 @@ func TestModulus_Congruent(t *testing.T) {
 		},
 		{
 			name:    "Very small test",
-			modulus: math.Float32frombits(4144),
-			arg:     math.Float32frombits(123445),
-			want:    math.Float32frombits(3269),
+			modulus: modular32.FromBits(4144),
+			arg:     modular32.FromBits(123445),
+			want:    modular32.FromBits(3269),
 		},
 		{
 			name:    "very big test with small modulus",
@@ -63,40 +61,40 @@ func TestModulus_Congruent(t *testing.T) {
 			arg:     -3,
 			want:    2,
 		},
-		//		Modulus{NaN}.Congruent(n) = NaN
+		//		Modulus{NaN}.Mod(n) = NaN
 		{
 			name:    "NaN modulus",
-			modulus: math.NaN(),
+			modulus: modular32.NaN(),
 			arg:     0,
-			want:    math.NaN(),
+			want:    modular32.NaN(),
 		},
-		// 		Modulus{±Inf}.Congruent(n>=0) = n
+		// 		Modulus{±Inf}.Mod(n>=0) = n
 		{
 			name:    "Inf modulus, positive number",
-			modulus: math.Inf(1),
+			modulus: modular32.Inf(1),
 			arg:     0,
 			want:    0,
 		},
-		//		Modulus{±Inf}.Congruent(n<0) = +Inf
+		//		Modulus{±Inf}.Mod(n<0) = +Inf
 		{
 			name:    "Inf modulus, negative number",
-			modulus: math.Inf(1),
+			modulus: modular32.Inf(1),
 			arg:     -1,
-			want:    math.Inf(1),
+			want:    modular32.Inf(1),
 		},
-		//		Modulus{m}.Congruent(±Inf) = NaN
+		//		Modulus{m}.Mod(±Inf) = NaN
 		{
 			name:    "Inf number",
 			modulus: 1,
-			arg:     math.Inf(1),
-			want:    math.NaN(),
+			arg:     modular32.Inf(1),
+			want:    modular32.NaN(),
 		},
-		//		Modulus{m}.Congruent(NaN) = NaN
+		//		Modulus{m}.Mod(NaN) = NaN
 		{
 			name:    "NaN number",
 			modulus: 1,
-			arg:     math.NaN(),
-			want:    math.NaN(),
+			arg:     modular32.NaN(),
+			want:    modular32.NaN(),
 		},
 		{
 			name:    "Denormalised edge case",
@@ -114,9 +112,9 @@ func TestModulus_Congruent(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := modular32.NewModulus(tt.modulus)
-			got := m.Congruent(tt.arg)
-			if got != tt.want && !(math.IsNaN(got) && math.IsNaN(tt.want)) {
-				t.Errorf("Modulus{%v}.Congruent(%v) = %v, want %v", tt.modulus, tt.arg, got, tt.want)
+			got := m.Mod(tt.arg)
+			if got != tt.want && !(got != got && tt.want != tt.want) {
+				t.Errorf("Modulus{%v}.Mod(%v) = %v, want %v", tt.modulus, tt.arg, got, tt.want)
 			}
 		})
 	}
@@ -173,32 +171,32 @@ func TestModulus_Dist(t *testing.T) {
 			name:    "NaN args",
 			modulus: 100,
 			args: args{
-				n1: math.NaN(),
+				n1: modular32.NaN(),
 				n2: 30,
 			},
-			want: math.NaN(),
+			want: modular32.NaN(),
 		},
 		{
 			name:    "NaN args",
 			modulus: 100,
 			args: args{
 				n1: 20,
-				n2: math.NaN(),
+				n2: modular32.NaN(),
 			},
-			want: math.NaN(),
+			want: modular32.NaN(),
 		},
 		{
 			name:    "NaN modulus",
-			modulus: math.NaN(),
+			modulus: modular32.NaN(),
 			args: args{
 				n1: 20,
 				n2: 30,
 			},
-			want: math.NaN(),
+			want: modular32.NaN(),
 		},
 		{
 			name:    "Inf modulus",
-			modulus: math.Inf(1),
+			modulus: modular32.Inf(1),
 			args: args{
 				n1: 20,
 				n2: 30,
@@ -209,17 +207,17 @@ func TestModulus_Dist(t *testing.T) {
 			name:    "Inf arg",
 			modulus: 100,
 			args: args{
-				n1: math.Inf(1),
+				n1: modular32.Inf(1),
 				n2: 30,
 			},
-			want: math.NaN(),
+			want: modular32.NaN(),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := modular32.NewModulus(tt.modulus)
 			got := m.Dist(tt.args.n1, tt.args.n2)
-			if got != tt.want && !(math.IsNaN(got) && math.IsNaN(tt.want)) {
+			if got != tt.want && !(got != got && tt.want != tt.want) {
 				t.Errorf("Modulus.Dist(%v, %v) = %v, want %v (mod %v)", tt.args.n1, tt.args.n2, got, tt.want, tt.modulus)
 			}
 		})
@@ -287,7 +285,7 @@ func TestModulus_GetCongruent(t *testing.T) {
 func TestModulus_Misc(t *testing.T) {
 	t.Run("Mod() test", func(t *testing.T) {
 		m := modular32.NewModulus(15)
-		got := m.Mod()
+		got := m.Modulus()
 		if got != 15 {
 			t.Errorf("Modulus.Mod() = %v, want %v", got, 15)
 		}
@@ -314,10 +312,10 @@ func BenchmarkMath_Mod(b *testing.B) {
 
 func BenchmarkModulus(b *testing.B) {
 	for _, n := range benchmarks {
-		b.Run(fmt.Sprintf("Congruent(%v)", n), func(b *testing.B) {
+		b.Run(fmt.Sprintf("Mod(%v)", n), func(b *testing.B) {
 			m := modular32.NewModulus(benchmarkModulo)
 			for i := 0; i < b.N; i++ {
-				float32Sink = m.Congruent(n)
+				float32Sink = m.Mod(n)
 			}
 		})
 	}

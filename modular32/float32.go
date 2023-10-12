@@ -2,11 +2,16 @@ package modular32
 
 import (
 	"math/bits"
-
-	math "github.com/chewxy/math32"
+	"unsafe"
 )
 
 const (
+	nan    = 0x7FE00000
+	posinf = 0x7F800000
+	neginf = 0xFF800000
+
+	MaxFloat = 0x1p127 * (1 + (1 - 0x1p-23))
+
 	fExponentBits = 8
 	fFractionBits = 23
 	fTotalBits    = 32
@@ -30,7 +35,7 @@ func shiftSub(up, down uint, n uint32) uint32 {
 // frexp splits a float into it's exponent and fraction component. Sign bit is discarded.
 // The 24th implied bit is placed in the fraction if appropriate
 func frexp(f float32) (uint32, uint) {
-	fbits := math.Float32bits(f)
+	fbits := ToBits(f)
 	exp := uint((fbits & fExponentMask) >> fFractionBits)
 	if exp == 0 {
 		return fbits & fFractionMask, 0
@@ -42,7 +47,7 @@ func frexp(f float32) (uint32, uint) {
 // Expects the 24th implied bit to be set if appropriate.
 func ldexp(fr uint32, exp uint) float32 {
 	if exp == 0 || fr == 0 {
-		return math.Float32frombits(fr & fFractionMask)
+		return FromBits(fr & fFractionMask)
 	}
 	shift := uint(bits.LeadingZeros32(fr) - fExponentBits)
 	if shift >= exp {
@@ -52,5 +57,35 @@ func ldexp(fr uint32, exp uint) float32 {
 		exp -= uint(shift)
 	}
 	fr = fr << shift
-	return math.Float32frombits((uint32(exp) << fFractionBits) | (fr & fFractionMask))
+	return FromBits((uint32(exp) << fFractionBits) | (fr & fFractionMask))
+}
+
+func ToBits(n float32) uint32 {
+	return *(*uint32)(unsafe.Pointer(&n))
+}
+
+func FromBits(bits uint32) float32 {
+	return *(*float32)(unsafe.Pointer(&bits))
+}
+
+func Abs(n float32) float32 {
+	if n <= 0 {
+		return -n
+	}
+	return n
+}
+
+func NaN() float32 {
+	return FromBits(nan)
+}
+
+func IsInf(n float32) bool {
+	return n > MaxFloat || n < -MaxFloat
+}
+
+func Inf(sign int) float32 {
+	if sign < 0 {
+		return FromBits(neginf)
+	}
+	return FromBits(posinf)
 }

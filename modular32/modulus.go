@@ -2,14 +2,13 @@ package modular32
 
 import (
 	"github.com/bmkessler/fastdiv"
-	math "github.com/chewxy/math32"
 )
 
 // NewModulus creates a new Modulus.
-// An Infinite modulus has no effect other than to waste CPU time
 //
 // Special cases:
-// 		NewModulus(0) = panic(integer divide by zero)
+//
+//	NewModulus(0) = panic(integer divide by zero)
 func NewModulus(modulus float32) Modulus {
 	modfr, modexp := frexp(modulus)
 
@@ -28,7 +27,7 @@ func NewModulus(modulus float32) Modulus {
 	mod := Modulus{
 		fd:     fastdiv.NewUint64(uint64(modfr)),
 		powers: powers,
-		mod:    math.Abs(modulus),
+		mod:    Abs(modulus),
 		exp:    modexp,
 	}
 
@@ -38,7 +37,7 @@ func NewModulus(modulus float32) Modulus {
 // Modulus defines a modulus.
 // It offers greater performance than traditional floating point modulo calculations by pre-computing the inverse of the modulus's fractional component,
 // and pre-computing a lookup table for different exponents in the given modulus, allowing direct computation of n mod m - no iteration or recursion is used.
-// This obviously adds overhead to the creation of a new Modulus, but quickly breaks even after a few calls to Congruent.
+// This obviously adds overhead to the creation of a new Modulus, but quickly breaks even after a few calls to Mod.
 type Modulus struct {
 	fd     fastdiv.Uint64
 	powers []uint64
@@ -47,13 +46,13 @@ type Modulus struct {
 }
 
 // Mod returns the modulus
-func (m Modulus) Mod() float32 {
+func (m Modulus) Modulus() float32 {
 	return m.mod
 }
 
-// Dist returns the distance and direction of n1 to n2.
+// Dist returns the shortest distance from n1 to n2.
 func (m Modulus) Dist(n1, n2 float32) float32 {
-	d := m.Congruent(n2 - n1)
+	d := m.Mod(n2 - n1)
 	if d > m.mod/2 {
 		return d - m.mod
 	}
@@ -65,17 +64,18 @@ func (m Modulus) GetCongruent(n1, n2 float32) float32 {
 	return n1 - m.Dist(n2, n1)
 }
 
-// Congruent returns n mod m.
+// Mod returns n mod m.
 //
 // Special cases:
-//		Modulus{NaN}.Congruent(n) = NaN
-// 		Modulus{±Inf}.Congruent(n>=0) = n
-//		Modulus{±Inf}.Congruent(n<0) = +Inf
-//		Modulus{m}.Congruent(±Inf) = NaN
-//		Modulus{m}.Congruent(NaN) = NaN
-func (m Modulus) Congruent(n float32) float32 {
+//
+//	Modulus{NaN}.Mod(n) = NaN
+//	Modulus{±Inf}.Mod(n>=0) = n
+//	Modulus{±Inf}.Mod(n<0) = +Inf
+//	Modulus{m}.Mod(±Inf) = NaN
+//	Modulus{m}.Mod(NaN) = NaN
+func (m Modulus) Mod(n float32) float32 {
 	if m.mod == 0 || m.mod != m.mod { // 0 or NaN modulus
-		return math.NaN()
+		return NaN()
 	}
 
 	nfr, nexp := frexp(n)
@@ -88,7 +88,7 @@ func (m Modulus) Congruent(n float32) float32 {
 	}
 
 	if nexp == fMaxExp {
-		return math.NaN()
+		return NaN()
 	}
 
 	expdiff := nexp - m.exp

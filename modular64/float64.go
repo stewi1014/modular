@@ -1,11 +1,17 @@
 package modular64
 
 import (
-	"math"
 	"math/bits"
+	"unsafe"
 )
 
 const (
+	nan    = 0x7FF8000000000001
+	posinf = 0x7FF0000000000000
+	neginf = 0xFFF0000000000000
+
+	MaxFloat = 0x1p1023 * (1 + (1 - 0x1p-52))
+
 	fExponentBits = 11
 	fFractionBits = 52
 	fTotalBits    = 64
@@ -29,7 +35,7 @@ func shiftSub(up, down uint, n uint64) uint64 {
 // frexp splits a float into it's exponent and fraction component. Sign bit is discarded.
 // The 53rd implied bit is placed in the fraction if appropriate
 func frexp(f float64) (uint64, uint) {
-	fbits := math.Float64bits(f)
+	fbits := ToBits(f)
 	exp := uint((fbits & fExponentMask) >> fFractionBits)
 	if exp == 0 {
 		return fbits & fFractionMask, 0
@@ -41,7 +47,7 @@ func frexp(f float64) (uint64, uint) {
 // Expects the 53rd implied bit to be set if appropriate.
 func ldexp(fr uint64, exp uint) float64 {
 	if exp == 0 || fr == 0 {
-		return math.Float64frombits(fr & fFractionMask)
+		return FromBits(fr & fFractionMask)
 	}
 	shift := uint(bits.LeadingZeros64(fr) - fExponentBits)
 	if shift >= exp {
@@ -51,5 +57,35 @@ func ldexp(fr uint64, exp uint) float64 {
 		exp -= uint(shift)
 	}
 	fr = fr << shift
-	return math.Float64frombits((uint64(exp) << fFractionBits) | (fr & fFractionMask))
+	return FromBits((uint64(exp) << fFractionBits) | (fr & fFractionMask))
+}
+
+func ToBits(n float64) uint64 {
+	return *(*uint64)(unsafe.Pointer(&n))
+}
+
+func FromBits(bits uint64) float64 {
+	return *(*float64)(unsafe.Pointer(&bits))
+}
+
+func Abs(n float64) float64 {
+	if n <= 0 {
+		return -n
+	}
+	return n
+}
+
+func NaN() float64 {
+	return FromBits(nan)
+}
+
+func IsInf(n float64) bool {
+	return n > MaxFloat || n < -MaxFloat
+}
+
+func Inf(sign int) float64 {
+	if sign < 0 {
+		return FromBits(neginf)
+	}
+	return FromBits(posinf)
 }
