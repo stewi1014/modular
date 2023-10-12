@@ -1,6 +1,6 @@
 # modular
 A modular arithmetic library with an emphasis on speed
-[![Build Status](https://travis-ci.org/stewi1014/modular.svg?branch=master)](https://travis-ci.org/stewi1014/modular)
+[![Status](https://github.com/stewi1014/modular/actions/workflows/go.yml/badge.svg)](https://github.com/stewi1014/modular/actions/workflows/go.yml)
 
 Float64
 [![GoDoc](https://godoc.org/github.com/stewi1014/modular/modular64?status.svg)](https://godoc.org/github.com/stewi1014/modular/modular64)
