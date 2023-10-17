@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	math "github.com/chewxy/math32"
 	"github.com/stewi1014/modular/modular32"
 )
 
@@ -140,7 +139,7 @@ func TestIndexer_Index(t *testing.T) {
 		{
 			name: "Infinite Modulus",
 			args: args{
-				modulus: math.Inf(1),
+				modulus: modular32.Inf(1),
 				index:   100,
 				n:       -2,
 			},
@@ -152,7 +151,7 @@ func TestIndexer_Index(t *testing.T) {
 		{
 			name: "NaN Modulus",
 			args: args{
-				modulus: math.NaN(),
+				modulus: modular32.NaN(),
 				index:   10054,
 				n:       -2,
 			},
@@ -166,7 +165,7 @@ func TestIndexer_Index(t *testing.T) {
 			args: args{
 				modulus: 23,
 				index:   10054,
-				n:       math.NaN(),
+				n:       modular32.NaN(),
 			},
 			want: want{
 				n:           10054,

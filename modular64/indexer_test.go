@@ -2,7 +2,6 @@ package modular64_test
 
 import (
 	"fmt"
-	"math"
 	"testing"
 
 	"github.com/stewi1014/modular/modular64"
@@ -128,7 +127,7 @@ func TestIndexer_Index(t *testing.T) {
 		{
 			name: "Infinite Modulus",
 			args: args{
-				modulus: math.Inf(1),
+				modulus: modular64.Inf(1),
 				index:   100,
 				n:       -2,
 			},
@@ -140,7 +139,7 @@ func TestIndexer_Index(t *testing.T) {
 		{
 			name: "NaN Modulus",
 			args: args{
-				modulus: math.NaN(),
+				modulus: modular64.NaN(),
 				index:   10054,
 				n:       -2,
 			},
@@ -154,7 +153,7 @@ func TestIndexer_Index(t *testing.T) {
 			args: args{
 				modulus: 23,
 				index:   10054,
-				n:       math.NaN(),
+				n:       modular64.NaN(),
 			},
 			want: want{
 				n:           10054,

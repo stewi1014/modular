@@ -1,7 +1,6 @@
 package modular64
 
 import (
-	"math"
 	"math/bits"
 
 	"github.com/bmkessler/fastdiv"
@@ -9,10 +8,9 @@ import (
 
 // NewModulus creates a new Modulus.
 //
-// An Infinite modulus has no effect other than to waste CPU time.
-//
 // Special cases:
-//		NewModulus(0) = panic(integer divide by zero)
+//
+//	NewModulus(0) = panic(integer divide by zero)
 func NewModulus(modulus float64) Modulus {
 	modfr, modexp := frexp(modulus)
 	fd := fastdiv.NewUint64(modfr)
@@ -37,7 +35,7 @@ func NewModulus(modulus float64) Modulus {
 	mod := Modulus{
 		fd:     fastdiv.NewUint64(modfr),
 		powers: powers,
-		mod:    math.Abs(modulus),
+		mod:    Abs(modulus),
 		fr:     modfr,
 		exp:    modexp,
 	}
@@ -56,14 +54,14 @@ type Modulus struct {
 	exp    uint
 }
 
-// Mod returns the modulus.
-func (m Modulus) Mod() float64 {
+// Modulus returns the modulus.
+func (m Modulus) Modulus() float64 {
 	return m.mod
 }
 
 // Dist returns the distance and direction of n1 to n2.
 func (m Modulus) Dist(n1, n2 float64) float64 {
-	d := m.Congruent(n2 - n1)
+	d := m.Mod(n2 - n1)
 	if d > m.mod/2 {
 		return d - m.mod
 	}
@@ -75,17 +73,18 @@ func (m Modulus) GetCongruent(n1, n2 float64) float64 {
 	return n1 - m.Dist(n2, n1)
 }
 
-// Congruent returns n mod m.
+// Mod returns n mod m.
 //
 // Special cases:
-//		Modulus{NaN}.Congruent(n) = NaN
-// 		Modulus{±Inf}.Congruent(n>=0) = n
-//		Modulus{±Inf}.Congruent(n<0) = +Inf
-//		Modulus{m}.Congruent(±Inf) = NaN
-//		Modulus{m}.Congruent(NaN) = NaN
-func (m Modulus) Congruent(n float64) float64 {
+//
+//	Modulus{NaN}.Mod(n) = NaN
+//	Modulus{±Inf}.Mod(n>=0) = n
+//	Modulus{±Inf}.Mod(n<0) = +Inf
+//	Modulus{m}.Mod(±Inf) = NaN
+//	Modulus{m}.Mod(NaN) = NaN
+func (m Modulus) Mod(n float64) float64 {
 	if m.mod == 0 || m.mod != m.mod { // 0 or NaN modulus
-		return math.NaN()
+		return NaN()
 	}
 
 	nfr, nexp := frexp(n)
@@ -98,7 +97,7 @@ func (m Modulus) Congruent(n float64) float64 {
 	}
 
 	if nexp == fMaxExp {
-		return math.NaN()
+		return NaN()
 	}
 
 	expdiff := nexp - m.exp
