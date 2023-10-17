@@ -38,7 +38,7 @@ func (m Modulus) NewIndexer(index int) (Indexer, error) {
 		return Indexer{}, ErrBadIndex
 	}
 
-	modfr, _ := frexp(m.mod)
+	modfr, _ := Frexp(m.mod)
 	r := modfr << fExponentBits //r - range; is shifted fExponentBits to get a little more
 	rDivisor := r / uint32(index)
 	return Indexer{
@@ -71,7 +71,7 @@ func (i Indexer) Index(n float32) int {
 		return i.i
 	}
 
-	nfr, nexp := frexp(n)
+	nfr, nexp := Frexp(n)
 	var nr uint32
 	switch {
 	case n > i.mod:
