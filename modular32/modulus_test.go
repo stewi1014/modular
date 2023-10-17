@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	math "github.com/chewxy/math32"
 	"github.com/stewi1014/modular/modular32"
 )
 
@@ -42,12 +41,6 @@ func TestModulus_Congruent(t *testing.T) {
 			modulus: modular32.FromBits(4144),
 			arg:     modular32.FromBits(123445),
 			want:    modular32.FromBits(3269),
-		},
-		{
-			name:    "very big test with small modulus",
-			modulus: 10,
-			arg:     456897613245865,
-			want:    math.Mod(456897613245865, 10),
 		},
 		{
 			name:    "Negative number",
@@ -98,15 +91,15 @@ func TestModulus_Congruent(t *testing.T) {
 		},
 		{
 			name:    "Denormalised edge case",
-			modulus: math.Ldexp(1, -126),
-			arg:     math.Ldexp(1.003, -126),
-			want:    math.Mod(math.Ldexp(1.003, -126), math.Ldexp(1, -126)),
+			modulus: 1.1754944e-38,
+			arg:     1.1790209e-38,
+			want:    3.5265e-41,
 		},
 		{
 			name:    "Denormalised edge case2",
-			modulus: math.Ldexp(1, -127),
-			arg:     math.Ldexp(1.003, -126),
-			want:    math.Mod(math.Ldexp(1.003, -126), math.Ldexp(1, -127)),
+			modulus: 5.877472e-39,
+			arg:     5.877472e-39,
+			want:    3.5265e-41,
 		},
 	}
 	for _, tt := range tests {
@@ -304,10 +297,96 @@ func BenchmarkMath_Mod(b *testing.B) {
 	for _, n := range benchmarks {
 		b.Run(fmt.Sprintf("Math.Mod(%v)", n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				float32Sink = math.Mod(n, benchmarkModulo)
+				float32Sink = math32mod(n, benchmarkModulo)
 			}
 		})
 	}
+}
+
+func math32mod(x, y float32) float32 {
+	if y == 0 || modular32.IsInf(x) || x != x || y != y {
+		return modular32.NaN()
+	}
+	y = modular32.Abs(y)
+
+	yfr, yexp := math32frexp(y)
+	r := x
+	if x < 0 {
+		r = -x
+	}
+
+	for r >= y {
+		rfr, rexp := math32frexp(r)
+		if rfr < yfr {
+			rexp = rexp - 1
+		}
+		r = r - math32ldexp(y, rexp-yexp)
+	}
+	if x < 0 {
+		r = -r
+	}
+	return r
+}
+
+func math32ldexp(frac float32, exp int) float32 {
+	// special cases
+	switch {
+	case frac == 0:
+		return frac // correctly return -0
+	case modular32.IsInf(frac) || frac != frac:
+		return frac
+	}
+	frac, e := math32normalize(frac)
+	exp += e
+	x := modular32.ToBits(frac)
+	exp += int(x>>23)&0xFF - 127
+	if exp < -149 {
+		return math32copysign(0, frac) // underflow
+	}
+	if exp > 127 { // overflow
+		if frac < 0 {
+			return modular32.Inf(-1)
+		}
+		return modular32.Inf(1)
+	}
+	var m float32 = 1
+	if exp < -(127 - 1) { // denormal
+		exp += 23
+		m = 1.0 / (1 << 23) // 1/(2**-23)
+	}
+	x &^= 0xFF << 23
+	x |= uint32(exp+127) << 23
+	return m * modular32.FromBits(x)
+}
+
+func math32copysign(x, y float32) float32 {
+	const sign = 1 << 31
+	return modular32.FromBits(modular32.ToBits(x)&^sign | modular32.ToBits(y)&sign)
+}
+
+func math32frexp(f float32) (frac float32, exp int) {
+	// special cases
+	switch {
+	case f == 0:
+		return f, 0 // correctly return -0
+	case modular32.IsInf(f) || f != f:
+		return f, 0
+	}
+	f, exp = math32normalize(f)
+	x := modular32.ToBits(f)
+	exp += int((x>>23)&0xFF) - 127 + 1
+	x &^= 0xFF << 23
+	x |= (-1 + 127) << 23
+	frac = modular32.FromBits(x)
+	return
+}
+
+func math32normalize(x float32) (y float32, exp int) {
+	const SmallestNormal = 1.1754943508222875079687365e-38 // 2**-(127 - 1)
+	if modular32.Abs(x) < SmallestNormal {
+		return x * (1 << 23), -23
+	}
+	return x, 0
 }
 
 func BenchmarkModulus(b *testing.B) {

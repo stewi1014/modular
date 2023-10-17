@@ -47,7 +47,7 @@ func TestModulus_Congruent(t *testing.T) {
 			name:    "very big test with small modulus",
 			modulus: 10,
 			arg:     456897613245865,
-			want:    math.Mod(456897613245865, 10),
+			want:    5,
 		},
 		{
 			name:    "Negative number",
@@ -98,27 +98,27 @@ func TestModulus_Congruent(t *testing.T) {
 		},
 		{
 			name:    "Denormalised edge case",
-			modulus: math.Ldexp(1, -1022),
-			arg:     math.Ldexp(1.003, -1022),
-			want:    math.Mod(math.Ldexp(1.003, -1022), math.Ldexp(1, -1022)),
+			modulus: 2.2250738585072014e-308,
+			arg:     2.2317490800827227e-308,
+			want:    6.6752215755214e-311,
 		},
 		{
 			name:    "Generated case 1",
 			modulus: -1.16358406231669e-309,
 			arg:     -2.3400420480579135e+145,
-			want:    math.Mod(-2.3400420480579135e+145, 1.16358406231669e-309) + 1.16358406231669e-309,
+			want:    2.28657639287183e-310,
 		},
 		{
 			name:    "Generated case 2",
 			modulus: 1.0863201545657832e-307,
 			arg:     1.3303463489150531e+13,
-			want:    math.Mod(1.3303463489150531e+13, 1.0863201545657832e-307),
+			want:    1.170654222001558e-308,
 		},
 		{
 			name:    "Generated case 3",
 			modulus: 2.039381663448266e-229,
 			arg:     -1.370217367318819e-267,
-			want:    math.Mod(-1.370217367318819e-267, 2.039381663448266e-229) + 2.039381663448266e-229,
+			want:    2.039381663448266e-229,
 		},
 	}
 	for _, tt := range tests {

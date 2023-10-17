@@ -10,7 +10,7 @@ import (
 //
 //	NewModulus(0) = panic(integer divide by zero)
 func NewModulus(modulus float32) Modulus {
-	modfr, modexp := frexp(modulus)
+	modfr, modexp := Frexp(modulus)
 
 	powers := make([]uint64, fMaxExp-modexp)
 	r := uint32(1)
@@ -78,7 +78,7 @@ func (m Modulus) Mod(n float32) float32 {
 		return NaN()
 	}
 
-	nfr, nexp := frexp(n)
+	nfr, nexp := Frexp(n)
 
 	if n < m.mod && n > -m.mod {
 		if n < 0 {
@@ -98,7 +98,7 @@ func (m Modulus) Mod(n float32) float32 {
 
 	nfr = m.modExp(nfr, expdiff)
 
-	r := ldexp(nfr, m.exp)
+	r := Ldexp(nfr, m.exp)
 
 	if n < 0 && r != 0 {
 		r = m.mod - r // correctly handle negatives

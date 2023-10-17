@@ -32,9 +32,9 @@ func shiftSub(up, down uint, n uint32) uint32 {
 	return n >> (down - up)
 }
 
-// frexp splits a float into it's exponent and fraction component. Sign bit is discarded.
+// Frexp splits a float into it's exponent and fraction component. Sign bit is discarded.
 // The 24th implied bit is placed in the fraction if appropriate
-func frexp(f float32) (uint32, uint) {
+func Frexp(f float32) (uint32, uint) {
 	fbits := ToBits(f)
 	exp := uint((fbits & fExponentMask) >> fFractionBits)
 	if exp == 0 {
@@ -43,9 +43,9 @@ func frexp(f float32) (uint32, uint) {
 	return (fbits & fFractionMask) | (1 << fFractionBits), exp
 }
 
-// ldexp assembles a float from an exponent and fraction component. Sign is ignored.
+// Ldexp assembles a float from an exponent and fraction component. Sign is ignored.
 // Expects the 24th implied bit to be set if appropriate.
-func ldexp(fr uint32, exp uint) float32 {
+func Ldexp(fr uint32, exp uint) float32 {
 	if exp == 0 || fr == 0 {
 		return FromBits(fr & fFractionMask)
 	}
