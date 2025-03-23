@@ -1,4 +1,6 @@
 # modular
+> This library was built for an old version of golang. Modern golang versions use hardware mod functions, so this library is likely useless now.
+
 A modular arithmetic library with an emphasis on speed
 [![Status](https://github.com/stewi1014/modular/actions/workflows/go.yml/badge.svg)](https://github.com/stewi1014/modular/actions/workflows/go.yml)
 
